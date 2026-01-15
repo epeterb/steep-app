@@ -44,7 +44,7 @@ export default function Dashboard() {
     const { data: userData } = await supabase
       .from('users')
       .select('*')
-      .eq('steep_email', 'peter@in.steep.news')
+      .eq('steep_email', 'peter@save.steep.news')
       .single()
 
     if (userData) {
