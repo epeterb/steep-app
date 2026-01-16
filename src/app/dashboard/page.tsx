@@ -46,20 +46,17 @@ function DashboardContent() {
   const [generating, setGenerating] = useState(false)
   const [digestResult, setDigestResult] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState('')
-  const [lookingUp, setLookingUp] = useState(false)
-  const [linkSent, setLinkSent] = useState(false)
   const [sendingLink, setSendingLink] = useState(false)
+  const [linkSent, setLinkSent] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const authEmail = searchParams.get('auth')
     const error = searchParams.get('error')
 
-    if (error === 'invalid') {
-      setAuthError('Invalid or already used login link.')
-    } else if (error === 'expired') {
-      setAuthError('Login link has expired. Please request a new one.')
-    }
+    if (error === 'invalid') setAuthError('Invalid or already used login link.')
+    else if (error === 'expired') setAuthError('Login link has expired. Please request a new one.')
 
     if (authEmail) {
       localStorage.setItem('steep_user_email', decodeURIComponent(authEmail))
@@ -78,7 +75,6 @@ function DashboardContent() {
   }, [searchParams])
 
   async function loadUserByEmail(email: string) {
-    setLookingUp(true)
     const { data: userData } = await supabase
       .from('users')
       .select('*')
@@ -86,7 +82,6 @@ function DashboardContent() {
       .single()
 
     if (!userData) {
-      setLookingUp(false)
       setLoading(false)
       localStorage.removeItem('steep_user_email')
       return
@@ -110,8 +105,6 @@ function DashboardContent() {
       .order('created_at', { ascending: false })
 
     if (digestsData) setDigests(digestsData)
-
-    setLookingUp(false)
     setLoading(false)
   }
 
@@ -127,11 +120,8 @@ function DashboardContent() {
         body: JSON.stringify({ email: userEmail })
       })
       const data = await response.json()
-      if (data.success) {
-        setLinkSent(true)
-      } else {
-        setAuthError(data.error || 'Failed to send login link')
-      }
+      if (data.success) setLinkSent(true)
+      else setAuthError(data.error || 'Failed to send login link')
     } catch {
       setAuthError('Something went wrong. Please try again.')
     }
@@ -160,11 +150,9 @@ function DashboardContent() {
       })
       const data = await response.json()
 
-      if (data.error) {
-        setDigestResult(`Error: ${data.error}`)
-      } else if (data.post_count === 0) {
-        setDigestResult('No posts to digest this week.')
-      } else {
+      if (data.error) setDigestResult(`Error: ${data.error}`)
+      else if (data.post_count === 0) setDigestResult('No posts to digest this week.')
+      else {
         setDigestResult(`Digest generated with ${data.post_count} posts!`)
         const { data: digestsData } = await supabase
           .from('weekly_digests')
@@ -177,6 +165,13 @@ function DashboardContent() {
       setDigestResult('Failed to generate digest')
     }
     setGenerating(false)
+  }
+
+  function shareLink() {
+    const referralLink = `https://steep.news?ref=${encodeURIComponent(user?.email || '')}`
+    navigator.clipboard.writeText(referralLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   function formatDate(dateString: string) {
@@ -203,9 +198,7 @@ function DashboardContent() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Check your email!</h3>
                 <p className="text-gray-600 mb-4">We sent a login link to <strong>{userEmail}</strong></p>
                 <p className="text-sm text-gray-500 mb-4">The link expires in 15 minutes.</p>
-                <button onClick={() => setLinkSent(false)} className="text-sm text-blue-600 hover:underline">
-                  Use a different email
-                </button>
+                <button onClick={() => setLinkSent(false)} className="text-sm text-blue-600 hover:underline">Use a different email</button>
               </div>
             ) : (
               <form onSubmit={handleSendMagicLink}>
@@ -220,14 +213,8 @@ function DashboardContent() {
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500"
                   />
                 </div>
-                {authError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{authError}</div>
-                )}
-                <button
-                  type="submit"
-                  disabled={sendingLink}
-                  className="w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50"
-                >
+                {authError && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{authError}</div>}
+                <button type="submit" disabled={sendingLink} className="w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50">
                   {sendingLink ? 'Sending...' : 'Send me a login link →'}
                 </button>
               </form>
@@ -256,6 +243,12 @@ function DashboardContent() {
           <div className="flex items-center justify-between">
             <a href="/" className="text-2xl font-bold text-gray-900">☕ Steep</a>
             <div className="flex items-center gap-4">
+              <button
+                onClick={shareLink}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+              >
+                {copied ? '✓ Link Copied!' : '🔗 Share Steep'}
+              </button>
               <span className="text-sm text-gray-600">{user?.name}</span>
               <button onClick={logout} className="text-sm text-gray-500 hover:text-gray-700">Logout</button>
             </div>
@@ -297,72 +290,4 @@ function DashboardContent() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <span className="font-semibold text-gray-900">{post.author_name}</span>
-                        {post.author_headline && <span className="text-gray-500 text-sm ml-2">{post.author_headline}</span>}
-                      </div>
-                      <span className="text-xs text-gray-400">{formatDate(post.captured_at)}</span>
-                    </div>
-                    {post.content && <p className="text-gray-700 mb-3 whitespace-pre-wrap line-clamp-4">{post.content}</p>}
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-2">
-                        {post.tags?.map((tag) => (
-                          <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">{tag}</span>
-                        ))}
-                      </div>
-                      {post.original_url && (
-                        <a href={post.original_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm hover:underline">
-                          View original →
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Digests</h2>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-4">
-              <button
-                onClick={generateDigest}
-                disabled={generating || posts.length === 0}
-                className="w-full bg-gray-900 text-white px-4 py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {generating ? 'Brewing...' : '☕ Generate Digest'}
-              </button>
-              {digestResult && <p className="text-sm text-gray-600 mt-3 text-center">{digestResult}</p>}
-              <p className="text-xs text-gray-500 mt-3 text-center">Digests are also sent automatically every Saturday.</p>
-            </div>
-
-            {digests.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-700">Past Digests</h3>
-                {digests.map((digest) => (
-                  <a key={digest.id} href={`/digest/${digest.id}`} className="block bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">Week of {new Date(digest.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                        <p className="text-sm text-gray-500">{digest.post_count} posts</p>
-                      </div>
-                      <span className="text-gray-400">→</span>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function Dashboard() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>}>
-      <DashboardContent />
-    </Suspense>
-  )
-}
+                        {post.author_hea
