@@ -52,8 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send email
-    const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify?token=${token}`
-
+    const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/verify?token=${token}`
     const { error: emailError } = await resend.emails.send({
       from: 'Steep <login@steep.news>',
       to: user.email,
