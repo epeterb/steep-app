@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -37,6 +38,7 @@ interface Digest {
 }
 
 export default function Dashboard() {
+  const searchParams = useSearchParams()
   const [posts, setPosts] = useState<SavedPost[]>([])
   const [digests, setDigests] = useState<Digest[]>([])
   const [user, setUser] = useState<User | null>(null)
@@ -45,8 +47,29 @@ export default function Dashboard() {
   const [digestResult, setDigestResult] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState('')
   const [lookingUp, setLookingUp] = useState(false)
+  const [linkSent, setLinkSent] = useState(false)
+  const [sendingLink, setSendingLink] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Check for magic link auth
+    const authEmail = searchParams.get('auth')
+    const error = searchParams.get('error')
+
+    if (error === 'invalid') {
+      setAuthError('Invalid or already used login link.')
+    } else if (error === 'expired') {
+      setAuthError('Login link has expired. Please request a new one.')
+    }
+
+    if (authEmail) {
+      localStorage.setItem('steep_user_email', decodeURIComponent(authEmail))
+      loadUserByEmail(decodeURIComponent(authEmail))
+      // Clean URL
+      window.history.replaceState({}, '', '/dashboard')
+      return
+    }
+
     const storedEmail = localStorage.getItem('steep_user_email')
     if (storedEmail) {
       setUserEmail(storedEmail)
@@ -54,7 +77,7 @@ export default function Dashboard() {
     } else {
       setLoading(false)
     }
-  }, [])
+  }, [searchParams])
 
   async function loadUserByEmail(email: string) {
     setLookingUp(true)
@@ -98,9 +121,30 @@ export default function Dashboard() {
     setLoading(false)
   }
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSendMagicLink(e: React.FormEvent) {
     e.preventDefault()
-    await loadUserByEmail(userEmail)
+    setSendingLink(true)
+    setAuthError(null)
+
+    try {
+      const response = await fetch('/api/auth/send-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setLinkSent(true)
+      } else {
+        setAuthError(data.error || 'Failed to send login link')
+      }
+    } catch (error) {
+      setAuthError('Something went wrong. Please try again.')
+    }
+
+    setSendingLink(false)
   }
 
   function logout() {
@@ -109,6 +153,7 @@ export default function Dashboard() {
     setPosts([])
     setDigests([])
     setUserEmail('')
+    setLinkSent(false)
   }
 
   async function generateDigest() {
@@ -157,6 +202,7 @@ export default function Dashboard() {
     })
   }
 
+  // Login screen
   if (!user && !loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -167,28 +213,54 @@ export default function Dashboard() {
           </div>
           
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <form onSubmit={handleLogin}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email address
-                </label>
-                <input
-                  type="email"
-                  value={userEmail}
-                  onChange={(e) => setUserEmail(e.target.value)}
-                  placeholder="peter@example.com"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500"
-                />
+            {linkSent ? (
+              <div className="text-center">
+                <div className="text-4xl mb-4">📧</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Check your email!</h3>
+                <p className="text-gray-600 mb-4">
+                  We sent a login link to <strong>{userEmail}</strong>
+                </p>
+                <p className="text-sm text-gray-500 mb-4">
+                  The link expires in 15 minutes.
+                </p>
+                <button
+                  onClick={() => setLinkSent(false)}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Use a different email
+                </button>
               </div>
-              <button
-                type="submit"
-                disabled={lookingUp}
-                className="w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50"
-              >
-                {lookingUp ? 'Looking up...' : 'Continue →'}
-              </button>
-            </form>
+            ) : (
+              <form onSubmit={handleSendMagicLink}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    placeholder="peter@example.com"
+                    required
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {authError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    {authError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={sendingLink}
+                  className="w-full bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50"
+                >
+                  {sendingLink ? 'Sending...' : 'Send me a login link →'}
+                </button>
+              </form>
+            )}
             
             <div className="mt-4 text-center">
               <a href="/" className="text-sm text-gray-500 hover:text-gray-700">
@@ -343,22 +415,3 @@ export default function Dashboard() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">
-                          Week of {new Date(digest.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {digest.post_count} posts
-                        </p>
-                      </div>
-                      <span className="text-gray-400">→</span>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
