@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { Resend } from 'resend'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 )
 
+const resend = new Resend(process.env.RESEND_API_KEY)
+
+const ADMIN_EMAIL = 'peter@steep.news'
+
 export async function POST(request: NextRequest) {
   try {
-    const { email, name } = await request.json()
+    const { email, name, referrer } = await request.json()
 
     if (!email || !name) {
       return NextResponse.json(
@@ -40,6 +45,7 @@ export async function POST(request: NextRequest) {
         steep_email: steepEmail,
         plan: 'trial',
         plan_expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        referred_by: referrer || null
       })
       .select()
       .single()
@@ -51,6 +57,23 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Notify admin of new signup
+    await resend.emails.send({
+      from: 'Steep <notifications@steep.news>',
+      to: ADMIN_EMAIL,
+      subject: `🎉 New Steep signup: ${name}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px;">
+          <h2>New user signed up!</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Steep Email:</strong> ${steepEmail}</p>
+          ${referrer ? `<p><strong>Referred by:</strong> ${referrer}</p>` : ''}
+          <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+        </div>
+      `
+    })
 
     return NextResponse.json({
       success: true,
