@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const resend = new Resend(resendKey)
 
   const today = new Date()
-  const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
+  const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Chicago' }).toLowerCase()
 
   console.log(`Running digest cron on ${dayOfWeek}`)
 
