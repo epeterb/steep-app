@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
       parsed.original_url = linkedInUrl
     }
     
-    // If content is empty, try to extract from URL slug
     if ((!parsed.content || parsed.content.trim() === '') && parsed.original_url) {
       parsed.content = extractContentFromUrl(parsed.original_url)
     }
@@ -125,23 +124,19 @@ function extractContentFromUrl(url: string): string {
   try {
     if (!url) return ''
     
-    // Match the slug part: linkedin.com/posts/author-name_slug-here-activity-12345
     const match = url.match(/linkedin\.com\/posts\/[^_]+_([a-z0-9-]+)/i)
     
     if (!match || !match[1]) return ''
     
     let slug = match[1]
     
-    // Remove activity/ugcPost ID suffixes
     slug = slug.replace(/-activity.*$/i, '')
     slug = slug.replace(/-ugcPost.*$/i, '')
     
-    // Convert hyphens to spaces
     let content = slug.replace(/-/g, ' ').trim()
     
     if (!content) return ''
     
-    // Capitalize first letter
     content = content.charAt(0).toUpperCase() + content.slice(1)
     
     return content + '...'
@@ -250,5 +245,6 @@ export async function GET() {
   return NextResponse.json({ 
     status: 'ok', 
     message: 'Steep inbound webhook is running',
-    timestamp: new Date()
-    
+    timestamp: new Date().toISOString()
+  })
+}
