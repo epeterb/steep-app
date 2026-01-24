@@ -205,7 +205,7 @@ function DashboardContent() {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-md mx-auto px-6 py-20">
           <div className="text-center mb-8">
-            <a href="/" className="text-4xl font-bold text-gray-900">☕ Steep</a>
+            <a href="/" className="text-4xl font-bold text-gray-900">🍵 Steep</a>
             <p className="text-gray-600 mt-2">Sign in to your dashboard</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-6">
@@ -258,7 +258,7 @@ function DashboardContent() {
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <a href="/" className="text-2xl font-bold text-gray-900">☕ Steep</a>
+            <a href="/" className="text-2xl font-bold text-gray-900">🍵 Steep</a>
             <div className="flex items-center gap-4">
               <button
                 onClick={shareLink}
@@ -340,7 +340,7 @@ function DashboardContent() {
                 disabled={generating || posts.length === 0}
                 className="w-full bg-gray-900 text-white px-4 py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {generating ? 'Brewing...' : '☕ Generate Digest'}
+                {generating ? 'Brewing...' : '🍵 Generate Digest'}
               </button>
               {digestResult && <p className="text-sm text-gray-600 mt-3 text-center">{digestResult}</p>}
               <p className="text-xs text-gray-500 mt-3 text-center">Digests are also sent automatically every Saturday.</p>
