@@ -94,7 +94,7 @@ export default function DigestView() {
             <a href="/dashboard" className="text-gray-600 hover:text-gray-900">
               ← Dashboard
             </a>
-            <a href="/" className="text-2xl font-bold text-gray-900">☕ Steep</a>
+            <a href="/" className="text-2xl font-bold text-gray-900">🍵 Steep</a>
             <div className="w-20"></div>
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function DigestView() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         <div className="bg-white rounded-xl shadow-sm p-8">
           <div className="text-center mb-8 pb-8 border-b">
-            <div className="text-4xl mb-4">☕</div>
+            <div className="text-4xl mb-4">🍵</div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Weekly Steep</h1>
             <p className="text-gray-600">
               {formatDate(digest.week_start)} — {formatDate(digest.week_end)}
