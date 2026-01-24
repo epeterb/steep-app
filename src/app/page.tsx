@@ -53,7 +53,7 @@ function HomeContent() {
     <main className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-6 py-20">
         <div className="text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">☕ Steep</h1>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">🍵 Steep</h1>
           <p className="text-xl text-gray-600 mb-2">Let your ideas brew</p>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-12">
             Forward LinkedIn posts you don't have time to explore. Get a personalized weekly digest that connects the dots.
@@ -72,7 +72,7 @@ function HomeContent() {
             <p className="text-gray-600">AI processes your saves, finds patterns, and surfaces insights.</p>
           </div>
           <div className="text-center p-6">
-            <div className="text-4xl mb-4">☕</div>
+            <div className="text-4xl mb-4">🍵</div>
             <h3 className="font-semibold text-lg mb-2">Digest</h3>
             <p className="text-gray-600">Every weekend, get a curated digest of what you captured.</p>
           </div>
