@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       const { error: emailError } = await resend.emails.send({
         from: 'Steep <digest@steep.news>',
         to: user.email,
-        subject: `☕ Your Weekly Steep (${digest.post_count} saves)`,
+        subject: `🍵 Your Weekly Steep (${digest.post_count} saves)`,
         html: htmlContent,
       })
 
@@ -146,7 +146,7 @@ function convertToHtml(markdown: string): string {
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #1a1a2e; margin: 0;">☕ Steep</h1>
+        <h1 style="color: #1a1a2e; margin: 0;">🍵 Steep</h1>
         <p style="color: #666; margin: 5px 0;">Your weekly digest</p>
       </div>
       <div>
