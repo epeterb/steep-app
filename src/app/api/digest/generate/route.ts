@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
   try {
     const { user_id } = await request.json()
     
-    // Get user
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -26,7 +25,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
     
-    // Get posts from the last 7 days
     const weekAgo = new Date()
     weekAgo.setDate(weekAgo.getDate() - 7)
     
@@ -50,16 +48,13 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // Count previous digests (for personalization context)
     const { count: weeksActive } = await supabase
       .from('weekly_digests')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user_id)
     
-    // Generate the digest
     const digestContent = await generateWeeklyDigest(user, posts, weeksActive || 0)
     
-    // Save the digest
     const today = new Date()
     const weekStart = new Date(weekAgo)
     
@@ -102,7 +97,7 @@ async function generateWeeklyDigest(
   const postsForPrompt = posts.map(p => ({
     author: p.author_name,
     headline: p.author_headline,
-    content: p.content?.substring(0, 2000), // Truncate long posts
+    content: p.content?.substring(0, 2000),
     url: p.original_url,
     source: p.source,
     saved: p.captured_at
@@ -114,7 +109,7 @@ async function generateWeeklyDigest(
     messages: [
       {
         role: 'user',
-        content: `You are a personal knowledge curator creating a weekly digest for a busy professional.
+        content: `You are a personal knowledge curator creating a weekly digest for a busy executive.
 
 USER CONTEXT:
 - Name: ${user.name}
@@ -123,33 +118,40 @@ USER CONTEXT:
 THIS WEEK'S SAVED CONTENT (${posts.length} posts):
 ${JSON.stringify(postsForPrompt, null, 2)}
 
-CREATE A WEEKLY DIGEST WITH THESE SECTIONS:
+CREATE A WEEKLY DIGEST TITLED "Your Week, Distilled" WITH THESE SECTIONS:
 
-## ☕ THE THROUGHLINE
+# Your Week, Distilled
+*Week of [date range]*
+
+## The Throughline
 What's the connective tissue across everything saved this week? (2-3 sentences)
 
-## 📚 THIS WEEK'S THEMES
+## This Week's Themes
 Group posts into 2-4 themes. For each:
 - **Theme Name**: Punchy title
 - **The Pattern**: What people are saying (2-3 sentences)
-- **The Posts**: Brief summary of each relevant post with [→ Original](url) link
+- **The Posts**: Brief summary of each relevant post with [Original](url) link
 - **Your Takeaway**: One actionable insight
 
-## 👀 PEOPLE WORTH FOLLOWING
-Authors who appeared multiple times or posted great content. Include why they're worth following.
+## Voices Worth Noting
+Highlight 2-3 authors whose content stood out this week. Focus on WHAT made their posts valuable, not whether to follow them (assume the reader already engages with these people). Format:
+- **[Author Name]**: What made their contribution notable this week
 
-## 💎 THE SLEEPER
-One post that seems minor but contains a hidden gem worth revisiting.
+## The Sleeper
+One post that seems minor but contains a hidden gem worth revisiting. Explain why it deserves a second look.
 
-## 🤔 REFLECTION PROMPT
+## Reflection
 One thought-provoking question based on what they saved.
 
+---
+
 STYLE GUIDELINES:
-- Write like a smart friend giving highlights
-- Conversational, not formal
+- Write like a sharp, trusted advisor briefing an executive
+- Professional and polished, no emojis
 - Skimmable in 3-4 minutes
 - Every post summary must link to original
-- If only 1-2 posts were saved, keep it brief and acknowledge the light week`
+- If only 1-2 posts were saved, keep it brief and acknowledge the light week
+- Tone: confident, concise, insightful`
       }
     ]
   })
@@ -157,7 +159,6 @@ STYLE GUIDELINES:
   return response.content[0].type === 'text' ? response.content[0].text : ''
 }
 
-// GET endpoint to test
 export async function GET() {
   return NextResponse.json({ 
     status: 'ok', 
