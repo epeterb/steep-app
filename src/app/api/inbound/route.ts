@@ -40,18 +40,20 @@ export async function POST(request: NextRequest) {
     
     console.log('Found user:', user.name)
     
-    // Use both TextBody and HtmlBody for better parsing
     const emailContent = TextBody || ''
     const htmlContent = HtmlBody || ''
     
-    // Pre-extract LinkedIn URL if present (these often get lost in parsing)
     const linkedInUrl = extractLinkedInUrl(emailContent + ' ' + htmlContent)
     
     const parsed = await parseEmailContent(emailContent, htmlContent, Subject)
     
-    // Use pre-extracted URL as fallback
     if (!parsed.original_url && linkedInUrl) {
       parsed.original_url = linkedInUrl
+    }
+    
+    // If content is empty, try to extract from URL slug
+    if ((!parsed.content || parsed.content.trim() === '') && parsed.original_url) {
+      parsed.content = extractContentFromUrl(parsed.original_url)
     }
     
     console.log('Parsed content:', {
@@ -104,7 +106,6 @@ export async function POST(request: NextRequest) {
 }
 
 function extractLinkedInUrl(text: string): string | null {
-  // Match various LinkedIn post URL formats
   const patterns = [
     /https?:\/\/(?:www\.)?linkedin\.com\/posts\/[^\s"<>)]+/gi,
     /https?:\/\/(?:www\.)?linkedin\.com\/feed\/update\/[^\s"<>)]+/gi,
@@ -114,11 +115,44 @@ function extractLinkedInUrl(text: string): string | null {
   for (const pattern of patterns) {
     const match = text.match(pattern)
     if (match) {
-      // Clean up the URL (remove tracking params if desired, or keep as-is)
       return match[0].split('?')[0]
     }
   }
   return null
+}
+
+function extractContentFromUrl(url: string): string {
+  try {
+    // LinkedIn URLs look like: linkedin.com/posts/author-name_post-title-here-activity-123
+    const match = url.match(/linkedin\.com\/posts\/[^_]+_([^-]+-[^-]+-[^-]+-[^-]+-[^-]+)/i)
+    
+    if (match && match[1]) {
+      // Convert slug to readable text
+      let content = match[1]
+        .replace(/-activity.*$/i, '') // Remove activity ID
+        .replace(/-ugcPost.*$/i, '')  // Remove ugcPost ID
+        .replace(/-/g, ' ')           // Replace hyphens with spaces
+        .trim()
+      
+      // Capitalize first letter
+      content = content.charAt(0).toUpperCase() + content.slice(1)
+      
+      // Add ellipsis to indicate it's truncated
+      return content + '...'
+    }
+    
+    // Fallback: try to get any readable part from the URL
+    const slugMatch = url.match(/posts\/[^_]+_(.+?)(?:-activity|-ugcPost|\?|$)/i)
+    if (slugMatch && slugMatch[1]) {
+      let content = slugMatch[1].replace(/-/g, ' ').trim()
+      content = content.charAt(0).toUpperCase() + content.slice(1)
+      return content + '...'
+    }
+    
+    return ''
+  } catch (e) {
+    return ''
+  }
 }
 
 async function parseEmailContent(
@@ -135,7 +169,6 @@ async function parseEmailContent(
   tags: string[]
 }> {
   try {
-    // Combine sources for better context
     const combinedContent = `
 SUBJECT: ${subject}
 
@@ -193,9 +226,7 @@ Rules:
     
     const parsed = JSON.parse(cleanedText)
     
-    // Validate author_name isn't empty
     if (!parsed.author_name || parsed.author_name === 'Unknown' || parsed.author_name.trim() === '') {
-      // Try to extract from subject line as fallback
       const subjectMatch = subject.match(/^(?:Fwd?:|RE:)?\s*(.+?)(?:\s+shared|\s+posted|\s+on LinkedIn)/i)
       if (subjectMatch) {
         parsed.author_name = subjectMatch[1].trim()
@@ -206,7 +237,6 @@ Rules:
   } catch (error) {
     console.error('Error parsing email:', error)
     
-    // Better fallback - try to extract URL at minimum
     const urlMatch = (textBody + htmlBody).match(/https?:\/\/(?:www\.)?linkedin\.com\/[^\s"<>]+/)
     
     return {
@@ -225,6 +255,5 @@ export async function GET() {
   return NextResponse.json({ 
     status: 'ok', 
     message: 'Steep inbound webhook is running',
-    timestamp: new Date().toISOString()
-  })
-}
+    timestamp: new Date()
+    
