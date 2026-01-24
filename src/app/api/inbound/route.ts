@@ -15,17 +15,14 @@ export async function POST(request: NextRequest) {
   try {
     const payload = await request.json()
     
-    // Postmark sends: From, To, Subject, TextBody, HtmlBody, etc.
     const { To, From, Subject, TextBody, HtmlBody } = payload
     
     console.log('Received email for:', To)
     console.log('From:', From)
     console.log('Subject:', Subject)
     
-    // Extract the steep email address (peter@in.steep.news)
     const steepEmail = To.toLowerCase().trim()
     
-    // Find the user by their steep_email
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -34,7 +31,6 @@ export async function POST(request: NextRequest) {
     
     if (userError || !user) {
       console.error('User not found for:', steepEmail)
-      // Return 200 anyway so Postmark doesn't retry
       return NextResponse.json({ 
         success: false, 
         error: 'User not found',
@@ -44,17 +40,27 @@ export async function POST(request: NextRequest) {
     
     console.log('Found user:', user.name)
     
-    // Parse the email content using Claude
-    const emailContent = TextBody || HtmlBody || ''
-    const parsed = await parseEmailContent(emailContent)
+    // Use both TextBody and HtmlBody for better parsing
+    const emailContent = TextBody || ''
+    const htmlContent = HtmlBody || ''
+    
+    // Pre-extract LinkedIn URL if present (these often get lost in parsing)
+    const linkedInUrl = extractLinkedInUrl(emailContent + ' ' + htmlContent)
+    
+    const parsed = await parseEmailContent(emailContent, htmlContent, Subject)
+    
+    // Use pre-extracted URL as fallback
+    if (!parsed.original_url && linkedInUrl) {
+      parsed.original_url = linkedInUrl
+    }
     
     console.log('Parsed content:', {
       source: parsed.source,
       author: parsed.author_name,
-      contentLength: parsed.content?.length
+      contentLength: parsed.content?.length,
+      url: parsed.original_url
     })
     
-    // Save to database
     const { data: post, error: postError } = await supabase
       .from('saved_posts')
       .insert({
@@ -97,7 +103,29 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function parseEmailContent(emailBody: string): Promise<{
+function extractLinkedInUrl(text: string): string | null {
+  // Match various LinkedIn post URL formats
+  const patterns = [
+    /https?:\/\/(?:www\.)?linkedin\.com\/posts\/[^\s"<>)]+/gi,
+    /https?:\/\/(?:www\.)?linkedin\.com\/feed\/update\/[^\s"<>)]+/gi,
+    /https?:\/\/(?:www\.)?linkedin\.com\/pulse\/[^\s"<>)]+/gi,
+  ]
+  
+  for (const pattern of patterns) {
+    const match = text.match(pattern)
+    if (match) {
+      // Clean up the URL (remove tracking params if desired, or keep as-is)
+      return match[0].split('?')[0]
+    }
+  }
+  return null
+}
+
+async function parseEmailContent(
+  textBody: string, 
+  htmlBody: string,
+  subject: string
+): Promise<{
   source: string
   author_name: string
   author_headline: string | null
@@ -107,63 +135,92 @@ async function parseEmailContent(emailBody: string): Promise<{
   tags: string[]
 }> {
   try {
+    // Combine sources for better context
+    const combinedContent = `
+SUBJECT: ${subject}
+
+TEXT VERSION:
+${textBody.substring(0, 8000)}
+
+HTML VERSION (for additional context):
+${htmlBody.substring(0, 4000)}
+`
+
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       messages: [
         {
           role: 'user',
-          content: `You are a content extraction specialist. Parse this forwarded email and extract the original LinkedIn post or Substack newsletter content.
+          content: `You are a content extraction specialist. Parse this forwarded email and extract the original LinkedIn post content.
 
-EMAIL CONTENT:
-${emailBody.substring(0, 10000)}
+${combinedContent}
 
-Extract and return ONLY valid JSON (no markdown, no explanation, no backticks):
+IMPORTANT: LinkedIn forwarded posts come in many formats:
+1. "Share" button forwards - include author name and post text
+2. Mobile app shares - often just a URL with preview text
+3. Copy/paste shares - raw text with URL
+4. Comment shares - "X commented on this"
+
+Extract and return ONLY valid JSON (no markdown, no backticks, no explanation):
 {
-  "source": "linkedin" or "substack" or "other",
-  "author_name": "Full name of original author",
-  "author_headline": "Their headline if visible, or null",
-  "content": "The full text of the original post/article",
-  "original_url": "Direct link to post if present, or null",
+  "source": "linkedin",
+  "author_name": "Full name of the person who wrote the original post (not the forwarder, not 'Unknown' unless truly impossible to determine)",
+  "author_headline": "Their job title/headline if visible, or null",
+  "content": "The actual post text content - what the author wrote. If you can only find a URL, leave this empty string",
+  "original_url": "The linkedin.com URL to the post - look for linkedin.com/posts/ or linkedin.com/feed/update/",
   "post_date": "ISO date if visible, or null",
-  "tags": ["relevant", "topic", "tags"]
+  "tags": ["3-5", "relevant", "topic", "keywords"]
 }
 
 Rules:
-- Strip all email forwarding artifacts (Fw:, -----, signatures)
-- For LinkedIn: Look for the post content, author name, and any engagement numbers
-- For Substack: Look for the article title and body
-- Extract only the meaningful content
-- Return ONLY the JSON object`
+- The author is the person who WROTE the post, not who forwarded it
+- Look for patterns like "Author Name\\nHeadline\\n\\nPost content"
+- If there's an image description, that's not the post content
+- Extract the LinkedIn URL even if it has tracking parameters
+- Tags should reflect the actual topics discussed
+- If you truly cannot find content, return empty string for content but still try to get author and URL`
         }
       ]
     })
     
     const text = response.content[0].type === 'text' ? response.content[0].text : ''
     
-    // Clean up any markdown artifacts
     const cleanedText = text
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim()
     
-    return JSON.parse(cleanedText)
+    const parsed = JSON.parse(cleanedText)
+    
+    // Validate author_name isn't empty
+    if (!parsed.author_name || parsed.author_name === 'Unknown' || parsed.author_name.trim() === '') {
+      // Try to extract from subject line as fallback
+      const subjectMatch = subject.match(/^(?:Fwd?:|RE:)?\s*(.+?)(?:\s+shared|\s+posted|\s+on LinkedIn)/i)
+      if (subjectMatch) {
+        parsed.author_name = subjectMatch[1].trim()
+      }
+    }
+    
+    return parsed
   } catch (error) {
     console.error('Error parsing email:', error)
-    // Fallback if parsing fails
+    
+    // Better fallback - try to extract URL at minimum
+    const urlMatch = (textBody + htmlBody).match(/https?:\/\/(?:www\.)?linkedin\.com\/[^\s"<>]+/)
+    
     return {
-      source: 'other',
-      author_name: 'Unknown',
+      source: 'linkedin',
+      author_name: 'Unknown Author',
       author_headline: null,
-      content: emailBody.substring(0, 5000),
-      original_url: null,
+      content: '',
+      original_url: urlMatch ? urlMatch[0].split('?')[0] : null,
       post_date: null,
       tags: []
     }
   }
 }
 
-// Also handle GET for testing
 export async function GET() {
   return NextResponse.json({ 
     status: 'ok', 
