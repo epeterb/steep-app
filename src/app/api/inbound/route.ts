@@ -123,33 +123,28 @@ function extractLinkedInUrl(text: string): string | null {
 
 function extractContentFromUrl(url: string): string {
   try {
-    // LinkedIn URLs look like: linkedin.com/posts/author-name_post-title-here-activity-123
-    const match = url.match(/linkedin\.com\/posts\/[^_]+_([^-]+-[^-]+-[^-]+-[^-]+-[^-]+)/i)
+    if (!url) return ''
     
-    if (match && match[1]) {
-      // Convert slug to readable text
-      let content = match[1]
-        .replace(/-activity.*$/i, '') // Remove activity ID
-        .replace(/-ugcPost.*$/i, '')  // Remove ugcPost ID
-        .replace(/-/g, ' ')           // Replace hyphens with spaces
-        .trim()
-      
-      // Capitalize first letter
-      content = content.charAt(0).toUpperCase() + content.slice(1)
-      
-      // Add ellipsis to indicate it's truncated
-      return content + '...'
-    }
+    // Match the slug part: linkedin.com/posts/author-name_slug-here-activity-12345
+    const match = url.match(/linkedin\.com\/posts\/[^_]+_([a-z0-9-]+)/i)
     
-    // Fallback: try to get any readable part from the URL
-    const slugMatch = url.match(/posts\/[^_]+_(.+?)(?:-activity|-ugcPost|\?|$)/i)
-    if (slugMatch && slugMatch[1]) {
-      let content = slugMatch[1].replace(/-/g, ' ').trim()
-      content = content.charAt(0).toUpperCase() + content.slice(1)
-      return content + '...'
-    }
+    if (!match || !match[1]) return ''
     
-    return ''
+    let slug = match[1]
+    
+    // Remove activity/ugcPost ID suffixes
+    slug = slug.replace(/-activity.*$/i, '')
+    slug = slug.replace(/-ugcPost.*$/i, '')
+    
+    // Convert hyphens to spaces
+    let content = slug.replace(/-/g, ' ').trim()
+    
+    if (!content) return ''
+    
+    // Capitalize first letter
+    content = content.charAt(0).toUpperCase() + content.slice(1)
+    
+    return content + '...'
   } catch (e) {
     return ''
   }
