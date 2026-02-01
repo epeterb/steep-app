@@ -130,14 +130,30 @@ export async function GET(request: NextRequest) {
 
 function convertToHtml(markdown: string): string {
   let html = markdown
-  html = html.replace(/^## (.*$)/gim, '<h2 class="major-section">$1</h2>')
-  html = html.replace(/^### (.*$)/gim, '<h3 class="theme-title">$1</h3>')
-  html = html.replace(/\*\*(.*?)\*\*/gim, '<strong class="label">$1</strong>')
+  
+  // Major section headers with inline styles
+  html = html.replace(/^## (.*$)/gim, '<h2 style="color: #1a1a2e; font-size: 20px; font-weight: 700; margin: 48px 0 20px 0; padding-bottom: 12px; border-bottom: 3px solid #1a1a2e; letter-spacing: -0.5px; text-transform: uppercase;">$1</h2>')
+  
+  // Theme titles with INLINE STYLES (blue, gray background, padding, borders)
+  html = html.replace(/^### (.*$)/gim, '<h3 style="color: #0066cc; font-size: 24px; font-weight: 700; margin: 56px 0 16px 0; padding: 16px; border-top: 3px solid #e8e8e8; border-bottom: 1px solid #e8e8e8; letter-spacing: -0.5px; background-color: #f8f9fa; margin-left: -16px; margin-right: -16px;">$1</h3>')
+  
+  // Bold labels with inline styles
+  html = html.replace(/\*\*(.*?)\*\*/gim, '<strong style="color: #1a1a2e; font-weight: 600; font-size: 16px;">$1</strong>')
+  
+  // Italic text
   html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>')
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" class="link">$1</a>')
-  html = html.replace(/^- (.*$)/gim, '<li class="bullet-item">$1</li>')
-  html = html.replace(/(<li class="bullet-item">.*?<\/li>\n?)+/gim, '<ul class="bullet-list">$&</ul>')
-  html = html.replace(/\n\n/gim, '</p><p class="paragraph">')
+  
+  // Links with inline styles
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" style="color: #0066cc; text-decoration: none; font-weight: 500;">$1</a>')
+  
+  // Bullet points with inline styles
+  html = html.replace(/^- (.*$)/gim, '<li style="color: #333; font-size: 16px; line-height: 1.7; margin: 8px 0; padding-left: 8px;">$1</li>')
+  
+  // Wrap list items in ul with inline styles
+  html = html.replace(/(<li style=".*?">.*?<\/li>\n?)+/gim, '<ul style="margin: 12px 0 20px 0; padding-left: 28px;">$&</ul>')
+  
+  // Paragraphs
+  html = html.replace(/\n\n/gim, '</p><p style="color: #333; font-size: 16px; line-height: 1.7; margin: 12px 0;">')
   html = html.replace(/\n/gim, '<br>')
 
   return `
@@ -146,126 +162,18 @@ function convertToHtml(markdown: string): string {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          line-height: 1.6;
-          color: #1a1a2e;
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-          background-color: #fafafa;
-        }
-        .email-header {
-          text-align: center;
-          margin-bottom: 40px;
-          padding-bottom: 20px;
-          border-bottom: 2px solid #e8e8e8;
-        }
-        .email-header h1 {
-          color: #1a1a2e;
-          font-size: 32px;
-          font-weight: 700;
-          margin: 0 0 8px 0;
-        }
-        .email-header .subtitle {
-          color: #666;
-          font-size: 16px;
-          margin: 0;
-        }
-        .content {
-          background-color: #ffffff;
-          padding: 32px;
-          border-radius: 8px;
-        }
-        .major-section {
-          color: #1a1a2e;
-          font-size: 26px;
-          font-weight: 700;
-          margin: 48px 0 20px 0;
-          padding-bottom: 12px;
-          border-bottom: 3px solid #1a1a2e;
-          letter-spacing: -0.5px;
-          text-transform: uppercase;
-          font-size: 20px;
-        }
-        .major-section:first-child {
-          margin-top: 0;
-        }
-        .theme-title {
-          color: #0066cc;
-          font-size: 24px;
-          font-weight: 700;
-          margin: 56px 0 16px 0;
-          padding: 16px;
-          border-top: 3px solid #e8e8e8;
-          border-bottom: 1px solid #e8e8e8;
-          letter-spacing: -0.5px;
-          background-color: #f8f9fa;
-          margin-left: -16px;
-          margin-right: -16px;
-        }
-        .theme-title:first-of-type {
-          margin-top: 24px;
-        }
-        .paragraph {
-          color: #333;
-          font-size: 16px;
-          line-height: 1.7;
-          margin: 12px 0;
-        }
-        .label {
-          color: #1a1a2e;
-          font-weight: 600;
-          font-size: 16px;
-        }
-        .link {
-          color: #0066cc;
-          text-decoration: none;
-          font-weight: 500;
-        }
-        .link:hover {
-          text-decoration: underline;
-        }
-        .bullet-list {
-          margin: 12px 0 20px 0;
-          padding-left: 28px;
-        }
-        .bullet-item {
-          color: #333;
-          font-size: 16px;
-          line-height: 1.7;
-          margin: 8px 0;
-          padding-left: 8px;
-        }
-        .email-footer {
-          margin-top: 48px;
-          padding-top: 24px;
-          border-top: 1px solid #e8e8e8;
-          text-align: center;
-        }
-        .email-footer p {
-          color: #666;
-          font-size: 14px;
-          margin: 8px 0;
-        }
-        .email-footer .link {
-          font-size: 14px;
-        }
-      </style>
     </head>
-    <body>
-      <div class="email-header">
-        <h1>☕ Steep</h1>
-        <p class="subtitle">Your weekly digest</p>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1a1a2e; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fafafa;">
+      <div style="text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e8e8e8;">
+        <h1 style="color: #1a1a2e; font-size: 32px; font-weight: 700; margin: 0 0 8px 0;">☕ Steep</h1>
+        <p style="color: #666; font-size: 16px; margin: 0;">Your weekly digest</p>
       </div>
-      <div class="content">
-        <p class="paragraph">${html}</p>
+      <div style="background-color: #ffffff; padding: 32px; border-radius: 8px;">
+        <p style="color: #333; font-size: 16px; line-height: 1.7; margin: 12px 0;">${html}</p>
       </div>
-      <div class="email-footer">
-        <p>You're receiving this because you saved content to Steep this week.</p>
-        <p><a href="https://steep.news/dashboard" class="link">View your dashboard</a></p>
+      <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e8e8e8; text-align: center;">
+        <p style="color: #666; font-size: 14px; margin: 8px 0;">You're receiving this because you saved content to Steep this week.</p>
+        <p style="color: #666; font-size: 14px; margin: 8px 0;"><a href="https://steep.news/dashboard" style="color: #0066cc; text-decoration: none; font-weight: 500;">View your dashboard</a></p>
       </div>
     </body>
     </html>
