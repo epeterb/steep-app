@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
       const { error: emailError } = await resend.emails.send({
         from: 'Steep <digest@steep.news>',
         to: user.email,
-        subject: `☕ Your Weekly Steep (${digest.post_count} saves)`,
+        subject: `🍵 Your Weekly Steep (${digest.post_count} saves)`,
         html: htmlContent,
       })
 
@@ -131,29 +131,32 @@ export async function GET(request: NextRequest) {
 function convertToHtml(markdown: string): string {
   let html = markdown
   
-  // Major section headers with inline styles
-  html = html.replace(/^## (.*$)/gim, '<h2 style="color: #1a1a2e; font-size: 20px; font-weight: 700; margin: 48px 0 20px 0; padding-bottom: 12px; border-bottom: 3px solid #1a1a2e; letter-spacing: -0.5px; text-transform: uppercase;">$1</h2>')
+  // Remove the # from the newsletter title line
+  html = html.replace(/^# (.*$)/gim, '<div style="font-size: 32px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0; padding: 20px 0; border-bottom: 4px solid #0066cc; text-align: center;">$1</div>')
   
-  // Theme titles with INLINE STYLES (blue, gray background, padding, borders)
-  html = html.replace(/^### (.*$)/gim, '<h3 style="color: #0066cc; font-size: 24px; font-weight: 700; margin: 56px 0 16px 0; padding: 16px; border-top: 3px solid #e8e8e8; border-bottom: 1px solid #e8e8e8; letter-spacing: -0.5px; background-color: #f8f9fa; margin-left: -16px; margin-right: -16px;">$1</h3>')
+  // Major section headers (## THE THROUGHLINE, ## THIS WEEK'S THEMES)
+  html = html.replace(/^## (.*$)/gim, '<div style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 48px 0 16px 0; padding-bottom: 12px; border-bottom: 3px solid #1a1a2e; text-transform: uppercase; letter-spacing: 0.5px;">$1</div>')
   
-  // Bold labels with inline styles
-  html = html.replace(/\*\*(.*?)\*\*/gim, '<strong style="color: #1a1a2e; font-weight: 600; font-size: 16px;">$1</strong>')
+  // Theme titles - USE TABLE FOR GUARANTEED BACKGROUND COLOR
+  html = html.replace(/^### (.*$)/gim, '<table width="100%" cellpadding="0" cellspacing="0" style="margin: 56px 0 8px 0;"><tr><td style="background-color: #f0f7ff; border-left: 4px solid #0066cc; padding: 20px; border-radius: 4px;"><div style="font-size: 28px; font-weight: 700; color: #0066cc; margin: 0; line-height: 1.3;">$1</div></td></tr></table>')
   
-  // Italic text
+  // Bold labels (The Pattern:, Your Takeaway:)
+  html = html.replace(/\*\*(.*?)\*\*/gim, '<span style="font-weight: 700; color: #1a1a2e; font-size: 18px;">$1</span>')
+  
+  // Italic
   html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>')
   
-  // Links with inline styles
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" style="color: #0066cc; text-decoration: none; font-weight: 500;">$1</a>')
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" style="color: #0066cc; text-decoration: none; font-weight: 600;">$1</a>')
   
-  // Bullet points with inline styles
-  html = html.replace(/^- (.*$)/gim, '<li style="color: #333; font-size: 16px; line-height: 1.7; margin: 8px 0; padding-left: 8px;">$1</li>')
+  // Bullet points - convert to proper list items
+  html = html.replace(/^- (.*$)/gim, '<li style="margin: 6px 0; padding-left: 8px; font-size: 18px; line-height: 1.6; color: #333;">$1</li>')
   
-  // Wrap list items in ul with inline styles
-  html = html.replace(/(<li style=".*?">.*?<\/li>\n?)+/gim, '<ul style="margin: 12px 0 20px 0; padding-left: 28px;">$&</ul>')
+  // Wrap consecutive list items in ul
+  html = html.replace(/(<li style=".*?">.*?<\/li>\n?)+/gim, '<ul style="margin: 12px 0 20px 0; padding-left: 24px; list-style-type: disc;">$&</ul>')
   
   // Paragraphs
-  html = html.replace(/\n\n/gim, '</p><p style="color: #333; font-size: 16px; line-height: 1.7; margin: 12px 0;">')
+  html = html.replace(/\n\n/gim, '</div><div style="font-size: 18px; line-height: 1.7; color: #333; margin: 8px 0;">')
   html = html.replace(/\n/gim, '<br>')
 
   return `
@@ -163,18 +166,40 @@ function convertToHtml(markdown: string): string {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1a1a2e; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fafafa;">
-      <div style="text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e8e8e8;">
-        <h1 style="color: #1a1a2e; font-size: 32px; font-weight: 700; margin: 0 0 8px 0;">☕ Steep</h1>
-        <p style="color: #666; font-size: 16px; margin: 0;">Your weekly digest</p>
-      </div>
-      <div style="background-color: #ffffff; padding: 32px; border-radius: 8px;">
-        <p style="color: #333; font-size: 16px; line-height: 1.7; margin: 12px 0;">${html}</p>
-      </div>
-      <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e8e8e8; text-align: center;">
-        <p style="color: #666; font-size: 14px; margin: 8px 0;">You're receiving this because you saved content to Steep this week.</p>
-        <p style="color: #666; font-size: 14px; margin: 8px 0;"><a href="https://steep.news/dashboard" style="color: #0066cc; text-decoration: none; font-weight: 500;">View your dashboard</a></p>
-      </div>
+    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fafafa;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fafafa;">
+        <tr>
+          <td align="center" style="padding: 20px;">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px;">
+              <!-- Header -->
+              <tr>
+                <td style="text-align: center; padding: 40px 40px 30px 40px; border-bottom: 2px solid #e8e8e8;">
+                  <div style="font-size: 42px; margin: 0 0 12px 0;">🍵</div>
+                  <h1 style="margin: 0 0 8px 0; font-size: 36px; font-weight: 700; color: #1a1a2e;">Steep</h1>
+                  <p style="margin: 0; font-size: 16px; color: #666;">Your weekly digest</p>
+                </td>
+              </tr>
+              
+              <!-- Content -->
+              <tr>
+                <td style="padding: 40px;">
+                  <div style="font-size: 18px; line-height: 1.7; color: #333; margin: 8px 0;">
+                    ${html}
+                  </div>
+                </td>
+              </tr>
+              
+              <!-- Footer -->
+              <tr>
+                <td style="padding: 30px 40px; border-top: 1px solid #e8e8e8; text-align: center;">
+                  <p style="margin: 0 0 12px 0; font-size: 14px; color: #666;">You're receiving this because you saved content to Steep this week.</p>
+                  <p style="margin: 0; font-size: 14px;"><a href="https://steep.news/dashboard" style="color: #0066cc; text-decoration: none; font-weight: 600;">View your dashboard →</a></p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `
