@@ -136,7 +136,7 @@ function convertToHtml(markdown: string): string {
   html = html.replace(/^- (.*$)/gim, '☆LISTITEM☆$1☆ENDITEM☆')
   
   // Remove the # from the newsletter title line
-  html = html.replace(/^# (.*$)/gim, '<div style="font-size: 32px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0; padding: 20px 0; border-bottom: 4px solid #0066cc; text-align: center;">$1</div>')
+  html = html.replace(/^# (.*$)/gim, '<div style="font-size: 32px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0; padding: 20px 0; border-bottom: 4px solid #1a1a2e; text-align: center;">$1</div>')
   
   // Major section headers (## THE THROUGHLINE, ## THIS WEEK'S THEMES)
   html = html.replace(/^## (.*$)/gim, '<div style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 48px 0 16px 0; padding-bottom: 12px; border-bottom: 3px solid #1a1a2e; text-transform: uppercase; letter-spacing: 0.5px;">$1</div>')
