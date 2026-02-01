@@ -118,9 +118,9 @@ USER CONTEXT:
 THIS WEEK'S SAVED CONTENT (${posts.length} posts):
 ${JSON.stringify(postsForPrompt, null, 2)}
 
-CREATE A WEEKLY DIGEST TITLED "Your Week, Distilled" WITH THESE SECTIONS:
+CREATE A WEEKLY DIGEST TITLED "Your Week Distilled" WITH THESE SECTIONS:
 
-# Your Week, Distilled
+# Your Week Distilled
 *Week of [date range]*
 
 ## The Throughline

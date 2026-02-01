@@ -131,17 +131,21 @@ export async function GET(request: NextRequest) {
 function convertToHtml(markdown: string): string {
   let html = markdown
   
+  // FIRST: Convert bullets BEFORE processing anything else
+  // This ensures - at start of line becomes a list item
+  html = html.replace(/^- (.*$)/gim, '☆LISTITEM☆$1☆ENDITEM☆')
+  
   // Remove the # from the newsletter title line
   html = html.replace(/^# (.*$)/gim, '<div style="font-size: 32px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0; padding: 20px 0; border-bottom: 4px solid #0066cc; text-align: center;">$1</div>')
   
   // Major section headers (## THE THROUGHLINE, ## THIS WEEK'S THEMES)
   html = html.replace(/^## (.*$)/gim, '<div style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 48px 0 16px 0; padding-bottom: 12px; border-bottom: 3px solid #1a1a2e; text-transform: uppercase; letter-spacing: 0.5px;">$1</div>')
   
-  // Theme titles - USE TABLE FOR GUARANTEED BACKGROUND COLOR
-  html = html.replace(/^### (.*$)/gim, '<table width="100%" cellpadding="0" cellspacing="0" style="margin: 56px 0 8px 0;"><tr><td style="background-color: #f0f7ff; border-left: 4px solid #0066cc; padding: 20px; border-radius: 4px;"><div style="font-size: 28px; font-weight: 700; color: #0066cc; margin: 0; line-height: 1.3;">$1</div></td></tr></table>')
+  // Theme titles - BLUE, BOLD, BIG (26px)
+  html = html.replace(/^### (.*$)/gim, '<table width="100%" cellpadding="0" cellspacing="0" style="margin: 48px 0 12px 0;"><tr><td style="background-color: #f0f7ff; border-left: 4px solid #0066cc; padding: 18px; border-radius: 4px;"><div style="font-size: 26px; font-weight: 700; color: #0066cc; margin: 0; line-height: 1.2;">$1</div></td></tr></table>')
   
   // Bold labels (The Pattern:, Your Takeaway:)
-  html = html.replace(/\*\*(.*?)\*\*/gim, '<span style="font-weight: 700; color: #1a1a2e; font-size: 18px;">$1</span>')
+  html = html.replace(/\*\*(.*?)\*\*/gim, '<span style="font-weight: 700; color: #1a1a2e; font-size: 17px;">$1</span>')
   
   // Italic
   html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>')
@@ -149,15 +153,18 @@ function convertToHtml(markdown: string): string {
   // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" style="color: #0066cc; text-decoration: none; font-weight: 600;">$1</a>')
   
-  // Bullet points - convert to proper list items
-  html = html.replace(/^- (.*$)/gim, '<li style="margin: 6px 0; padding-left: 8px; font-size: 18px; line-height: 1.6; color: #333;">$1</li>')
+  // Process newlines
+  html = html.replace(/\n\n/gim, '</div><div style="font-size: 16px; line-height: 1.7; color: #333; margin: 8px 0;">')
+  html = html.replace(/\n/gim, '<br>')
+  
+  // LAST: Convert our list item markers to actual HTML
+  html = html.replace(/☆LISTITEM☆(.*?)☆ENDITEM☆/gim, '<li style="margin: 4px 0; font-size: 16px; line-height: 1.6; color: #333;">$1</li>')
   
   // Wrap consecutive list items in ul
-  html = html.replace(/(<li style=".*?">.*?<\/li>\n?)+/gim, '<ul style="margin: 12px 0 20px 0; padding-left: 24px; list-style-type: disc;">$&</ul>')
+  html = html.replace(/(<li style=".*?">.*?<\/li>(<br>)?)+/gim, '<ul style="margin: 8px 0 16px 0; padding-left: 24px; list-style-type: disc;">$&</ul>')
   
-  // Paragraphs
-  html = html.replace(/\n\n/gim, '</div><div style="font-size: 18px; line-height: 1.7; color: #333; margin: 8px 0;">')
-  html = html.replace(/\n/gim, '<br>')
+  // Clean up any remaining markers
+  html = html.replace(/☆LISTITEM☆|☆ENDITEM☆/gim, '')
 
   return `
     <!DOCTYPE html>
@@ -183,7 +190,7 @@ function convertToHtml(markdown: string): string {
               <!-- Content -->
               <tr>
                 <td style="padding: 40px;">
-                  <div style="font-size: 18px; line-height: 1.7; color: #333; margin: 8px 0;">
+                  <div style="font-size: 16px; line-height: 1.7; color: #333; margin: 8px 0;">
                     ${html}
                   </div>
                 </td>
