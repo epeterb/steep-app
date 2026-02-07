@@ -1,5 +1,3 @@
-import React from 'react'
-
 interface Post {
   id: string
   content: string | null
@@ -9,7 +7,19 @@ interface Post {
   captured_at: string
 }
 
-export default function PostCard({ post }: { post: Post }) {
+interface PostCardProps {
+  post: Post
+}
+
+export default function PostCard({ post }: PostCardProps) {
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString()
+    } catch {
+      return 'Unknown date'
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
       <div className="mb-3">
@@ -27,7 +37,7 @@ export default function PostCard({ post }: { post: Post }) {
       
       <div className="flex items-center justify-between text-sm">
         <span className="text-gray-500">
-          {new Date(post.captured_at).toLocaleDateString()}
+          {formatDate(post.captured_at)}
         </span>
         {post.original_url && (
           
