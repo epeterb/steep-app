@@ -22,15 +22,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch user's posts
     let query = supabase
       .from('saved_posts')
       .select('*')
       .eq('user_id', user_id)
       .order('captured_at', { ascending: false })
-      .limit(100) // Limit to recent 100 posts to manage token usage
+      .limit(100)
 
-    // If filtering by collection
     if (collection_id) {
       const { data: collectionPosts } = await supabase
         .from('collection_posts')
@@ -58,18 +56,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Prepare posts for Claude
     const postsContext = posts.map((p, idx) => ({
       id: idx + 1,
       post_id: p.id,
       author: p.author_name,
       headline: p.author_headline,
-      content: p.content?.substring(0, 1000), // Truncate to manage tokens
+      content: p.content?.substring(0, 1000),
       url: p.original_url,
       date: p.captured_at
     }))
 
-    // Ask Claude
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
@@ -101,10 +97,8 @@ CITED POSTS: [1, 3, 7]`
 
     const answerText = response.content[0].type === 'text' ? response.content[0].text : ''
 
-    // Extract cited post IDs from the response
     const citedIds = extractCitedPostIds(answerText, postsContext.length)
     
-    // Get citation details
     const citations = citedIds.map(id => {
       const post = postsContext[id - 1]
       return {
@@ -114,7 +108,6 @@ CITED POSTS: [1, 3, 7]`
       }
     })
 
-    // Clean up the answer (remove the CITED POSTS line)
     const cleanAnswer = answerText.split('CITED POSTS:')[0].trim()
 
     return NextResponse.json({
@@ -133,15 +126,12 @@ CITED POSTS: [1, 3, 7]`
 }
 
 function extractCitedPostIds(text: string, maxId: number): number[] {
-  // Look for the CITED POSTS line
   const citedLine = text.split('CITED POSTS:')[1]
   if (!citedLine) return []
 
-  // Extract numbers from the line
   const matches = citedLine.match(/\d+/g)
   if (!matches) return []
 
-  // Convert to numbers and filter valid IDs
   return matches
     .map(n => parseInt(n))
     .filter(n => n >= 1 && n <= maxId)

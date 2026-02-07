@@ -71,7 +71,6 @@ export default function AskLibraryChat({
         <h3 className="text-lg font-semibold text-gray-900">Ask Your Library</h3>
       </div>
 
-      {/* Messages */}
       <div className="space-y-4 mb-4 max-h-96 overflow-y-auto">
         {messages.length === 0 && (
           <div className="text-center py-8 text-gray-500">
@@ -96,7 +95,6 @@ export default function AskLibraryChat({
               {message.content}
             </div>
 
-            {/* Citations */}
             {message.citations && message.citations.length > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-200">
                 <div className="text-xs font-medium text-gray-500 mb-2">
@@ -128,7 +126,6 @@ export default function AskLibraryChat({
         )}
       </div>
 
-      {/* Input */}
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"
