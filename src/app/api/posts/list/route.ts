@@ -8,22 +8,28 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get('user_id')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     
     if (!userId) {
-      return NextResponse.json({ error: 'user_id required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'user_id is required' },
+        { status: 400 }
+      )
     }
     
+    // Calculate offset for pagination
     const offset = (page - 1) * limit
     
+    // Get total count
     const { count } = await supabase
       .from('saved_posts')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
     
+    // Get paginated posts
     const { data: posts, error } = await supabase
       .from('saved_posts')
       .select('*')
@@ -33,22 +39,31 @@ export async function GET(request: NextRequest) {
     
     if (error) {
       console.error('Error fetching posts:', error)
-      return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to fetch posts' },
+        { status: 500 }
+      )
     }
+    
+    const total = count || 0
+    const totalPages = Math.ceil(total / limit)
+    const hasMore = page < totalPages
     
     return NextResponse.json({
       posts: posts || [],
       pagination: {
         page,
         limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
-        hasMore: offset + limit < (count || 0)
+        total,
+        totalPages,
+        hasMore
       }
     })
-    
   } catch (error) {
-    console.error('Posts API error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    console.error('Server error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
