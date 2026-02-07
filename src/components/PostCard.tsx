@@ -42,7 +42,7 @@ export default function PostCard({ post }: PostCardProps) {
           {formatDate(post.captured_at)}
         </span>
         {post.original_url && (
-          
+          <a
             href={post.original_url}
             target="_blank"
             rel="noopener noreferrer"
