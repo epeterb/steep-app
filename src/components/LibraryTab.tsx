@@ -85,16 +85,6 @@ export default function LibraryTab({ userId }: { userId: string }) {
     setCollections([...collections, { ...newCollection, post_count: 0 }])
   }
 
-  const filteredPosts = posts.filter((post) => {
-    if (!searchQuery) return true
-    const query = searchQuery.toLowerCase()
-    return (
-      post.content?.toLowerCase().includes(query) ||
-      post.author_name?.toLowerCase().includes(query) ||
-      post.author_headline?.toLowerCase().includes(query)
-    )
-  })
-
   const deleteCollection = async (collectionId: string) => {
     if (!confirm('Delete this collection? Posts will not be deleted.')) {
       return
@@ -116,6 +106,16 @@ export default function LibraryTab({ userId }: { userId: string }) {
       setSelectedCollection(null)
     }
   }
+
+  const filteredPosts = posts.filter((post) => {
+    if (!searchQuery) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      post.content?.toLowerCase().includes(query) ||
+      post.author_name?.toLowerCase().includes(query) ||
+      post.author_headline?.toLowerCase().includes(query)
+    )
+  })
 
   return (
     <div className="space-y-6">
