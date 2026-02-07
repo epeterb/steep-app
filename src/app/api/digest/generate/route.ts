@@ -40,20 +40,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 })
     }
     
-    if (!posts || posts.length === 0) {
-      return NextResponse.json({ 
-        success: true,
-        message: 'No posts saved this week',
-        post_count: 0 
-      })
-    }
-    
     const { count: weeksActive } = await supabase
       .from('weekly_digests')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user_id)
     
-    const digestContent = await generateWeeklyDigest(user, posts, weeksActive || 0)
+    // Generate digest regardless of post count
+    const digestContent = posts && posts.length > 0 
+      ? await generateWeeklyDigest(user, posts, weeksActive || 0)
+      : await generateNoPostsReminder(user)
     
     const today = new Date()
     const weekStart = new Date(weekAgo)
@@ -64,7 +59,7 @@ export async function POST(request: NextRequest) {
         user_id: user_id,
         week_start: weekStart.toISOString().split('T')[0],
         week_end: today.toISOString().split('T')[0],
-        post_count: posts.length,
+        post_count: posts?.length || 0,
         digest_content: digestContent,
       })
       .select()
@@ -78,7 +73,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true,
       digest_id: savedDigest.id,
-      post_count: posts.length,
+      post_count: posts?.length || 0,
       preview: digestContent.substring(0, 500) + '...'
     })
     
@@ -86,6 +81,32 @@ export async function POST(request: NextRequest) {
     console.error('Digest generation error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
+}
+
+async function generateNoPostsReminder(user: any): Promise<string> {
+  return `## ☕ Your Week, Distilled
+
+Hey ${user.name},
+
+We brewed your weekly digest, but the pot's empty this week—no posts saved!
+
+**Here's how to capture content for next week:**
+
+1. **Forward posts** to \`${user.email.split('@')[0]}@in.steep.news\`
+2. **Save interesting LinkedIn content** as you scroll
+3. **Let it steep** all week
+4. **Get your digest** every ${user.digest_day.charAt(0).toUpperCase() + user.digest_day.slice(1)}
+
+The best insights come from consistent curation. Start saving this week and watch the patterns emerge.
+
+**Quick tip:** When you see a post worth remembering, forward it immediately. Your future self will thank you.
+
+See you next week,  
+**Steep** ☕
+
+---
+
+*Not seeing value? Reply and let us know how we can help.*`
 }
 
 async function generateWeeklyDigest(
@@ -109,7 +130,7 @@ async function generateWeeklyDigest(
     messages: [
       {
         role: 'user',
-        content: `You are a personal knowledge curator creating a weekly digest for a busy executive.
+        content: `You are a personal knowledge curator creating a weekly digest for a busy professional.
 
 USER CONTEXT:
 - Name: ${user.name}
@@ -118,40 +139,33 @@ USER CONTEXT:
 THIS WEEK'S SAVED CONTENT (${posts.length} posts):
 ${JSON.stringify(postsForPrompt, null, 2)}
 
-CREATE A WEEKLY DIGEST TITLED "Your Week Distilled" WITH THESE SECTIONS:
+CREATE A WEEKLY DIGEST WITH THESE SECTIONS:
 
-# Your Week Distilled
-*Week of [date range]*
-
-## The Throughline
+## ☕ THE THROUGHLINE
 What's the connective tissue across everything saved this week? (2-3 sentences)
 
-## This Week's Themes
+## 📚 THIS WEEK'S THEMES
 Group posts into 2-4 themes. For each:
 - **Theme Name**: Punchy title
 - **The Pattern**: What people are saying (2-3 sentences)
-- **The Posts**: Brief summary of each relevant post with [Original](url) link
+- **The Posts**: Brief summary of each relevant post with [→ Original](url) link
 - **Your Takeaway**: One actionable insight
 
-## Voices Worth Noting
-Highlight 2-3 authors whose content stood out this week. Focus on WHAT made their posts valuable, not whether to follow them (assume the reader already engages with these people). Format:
-- **[Author Name]**: What made their contribution notable this week
+## 👀 PEOPLE WORTH FOLLOWING
+Authors who appeared multiple times or posted great content. Include why they're worth following.
 
-## The Sleeper
-One post that seems minor but contains a hidden gem worth revisiting. Explain why it deserves a second look.
+## 💎 THE SLEEPER
+One post that seems minor but contains a hidden gem worth revisiting.
 
-## Reflection
+## 🤔 REFLECTION PROMPT
 One thought-provoking question based on what they saved.
 
----
-
 STYLE GUIDELINES:
-- Write like a sharp, trusted advisor briefing an executive
-- Professional and polished, no emojis
+- Write like a smart friend giving highlights
+- Conversational, not formal
 - Skimmable in 3-4 minutes
 - Every post summary must link to original
-- If only 1-2 posts were saved, keep it brief and acknowledge the light week
-- Tone: confident, concise, insightful`
+- If only 1-2 posts were saved, keep it brief and acknowledge the light week`
       }
     ]
   })
