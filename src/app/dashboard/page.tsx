@@ -75,13 +75,12 @@ export default function Dashboard() {
     fetchPosts(1)
   }, [])
 
-  const loadMore = () => {
-    if (pagination?.hasMore && !loadingMore) {
-      // Use pagination.page from the API response, not local state
-      const nextPage = pagination.page + 1
-      fetchPosts(nextPage, true)
-    }
+const loadMore = () => {
+  if (pagination?.hasMore && !loadingMore) {
+    const nextPage = pagination.page + 1  // ✅ Uses current page from API
+    fetchPosts(nextPage, true)
   }
+}
 
   if (loading) {
     return (
