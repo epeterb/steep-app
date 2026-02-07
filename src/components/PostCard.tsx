@@ -1,3 +1,5 @@
+import React from 'react'
+
 interface Post {
   id: string
   content: string | null
