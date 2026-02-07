@@ -27,7 +27,7 @@ export default function Dashboard() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
 
-  const userId = 'your-user-id-here'
+  const userId = 'd7b500dd-0089-4fa7-83e7-2c91539950a2'
 
   const fetchPosts = async (page: number, append: boolean = false) => {
     try {
