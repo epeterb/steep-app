@@ -1,5 +1,182 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import PostCard from '@/components/PostCard'
+
+interface Post {
+  id: string
+  author_name: string
+  author_headline?: string
+  content: string
+  original_url: string
+  captured_at: string
+}
+
+interface PaginationInfo {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasMore: boolean
+}
+
+export default function DashboardPage() {
+  const [posts, setPosts] = useState<Post[]>([])
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  
+  const userId = 'your-user-id-here'
+  
+  const fetchPosts = async (page: number, append: boolean = false) => {
+    try {
+      if (append) {
+        setLoadingMore(true)
+      } else {
+        setLoading(true)
+      }
+      
+      const response = await fetch(`/api/posts/list?user_id=${userId}&page=${nano src/app/dashboard/page.tsx}&limit=20`)
+      const data = await response.json()
+      
+      if (append) {
+        setPosts(prev => [...prev, ...data.posts])
+      } else {
+        setPosts(data.posts)
+      }
+      
+      setPagination(data.pagination)
+      setCurrentPage(page)
+      
+    } catch (error) {
+      console.error('Failed to fetch posts:', error)
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }
+  
+  useEffect(() => {
+    fetchPosts(1)
+  }, [])
+  
+  const handleLoadMore = () => {
+    if (pagination?.hasMore) {
+      fetchPosts(currentPage + 1, true)
+    }
+  }
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-7xl mx-auto px-6 py-12">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading your library...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+  
+  if (posts.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-7xl mx-auto px-6 py-12">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center max-w-md">
+              <div className="text-6xl mb-4">🍵</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">No posts saved yet</h2>
+              <p className="text-gray-600 mb-6">
+                Forward LinkedIn posts to your Steep email to start building your library
+              </p>
+              <a 
+                href="/"
+                className="inline-block bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
+              >
+                Learn How It Works
+              </a>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      <main className="max-w-7xl mx-auto px-6 py-12">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Library</h1>
+          <p className="text-gray-600">
+            {pagination?.total} {pagination?.total === 1 ? 'post' : 'posts'} saved
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {posts.map(post => (
+            <PostCard
+              key={post.id}
+              id={post.id}
+              authorName={post.author_name}
+              authorHeadline={post.author_headline}
+              content={post.content}
+              originalUrl={post.original_url}
+              capturedAt={post.captured_at}
+            />
+          ))}
+        </div>
+        
+        {pagination?.hasMore && (
+          <div className="flex justify-center">
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="bg-gray-900 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingMore ? (
+                <span className="flex items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Loading...
+                </span>
+              ) : (
+                `Load More (${pagination.total - posts.length} remaining)`
+              )}
+            </button>
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
+
+function Header() {
+  return (
+    <header className="bg-white border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="text-2xl">🍵</span>
+            <h1 className="text-2xl font-bold text-gray-900">Steep</h1>
+          </div>
+          
+          <nav className="flex items-center space-x-6">
+            <a href="/dashboard" className="text-gray-900 font-medium">Library</a>
+            <a href="/dashboard/settings" className="text-gray-600 hover:text-gray-900">Settings</a>
+          </nav>
+        </div>
+      </div>
+    </header>
+  )
+}'use client'
+
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
