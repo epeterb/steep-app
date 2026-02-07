@@ -1,3 +1,5 @@
+'use client'
+
 interface Post {
   id: string
   content: string | null
