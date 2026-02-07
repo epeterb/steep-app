@@ -10,7 +10,11 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-export default function LibraryTab({ userId }: { userId: string }) {
+interface LibraryTabProps {
+  userId: string
+}
+
+export default function LibraryTab({ userId }: LibraryTabProps) {
   const [posts, setPosts] = useState<any[]>([])
   const [collections, setCollections] = useState<any[]>([])
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
@@ -23,7 +27,7 @@ export default function LibraryTab({ userId }: { userId: string }) {
     fetchPosts()
   }, [userId, selectedCollection])
 
-  const fetchCollections = async () => {
+  async function fetchCollections() {
     const { data, error } = await supabase
       .from('collections')
       .select('*')
@@ -45,7 +49,7 @@ export default function LibraryTab({ userId }: { userId: string }) {
     }
   }
 
-  const fetchPosts = async () => {
+  async function fetchPosts() {
     setLoading(true)
 
     let query = supabase
@@ -81,11 +85,11 @@ export default function LibraryTab({ userId }: { userId: string }) {
     setLoading(false)
   }
 
-  const handleCollectionCreated = (newCollection: any) => {
+  function handleCollectionCreated(newCollection: any) {
     setCollections([...collections, { ...newCollection, post_count: 0 }])
   }
 
-  const deleteCollection = async (collectionId: string) => {
+  async function deleteCollection(collectionId: string) {
     if (!confirm('Delete this collection? Posts will not be deleted.')) {
       return
     }
