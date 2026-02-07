@@ -1,204 +1,79 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import PostCard from '@/components/PostCard'
+import { useState } from 'react'
+import LibraryTab from '@/components/LibraryTab'
+import DigestsTab from '@/components/DigestsTab'
+import SettingsTab from '@/components/SettingsTab'
 
-interface Post {
-  id: string
-  author_name: string
-  author_headline?: string
-  content: string
-  original_url: string
-  captured_at: string
-}
+type Tab = 'library' | 'digests' | 'settings'
 
-interface PaginationInfo {
-  page: number
-  limit: number
-  total: number
-  totalPages: number
-  hasMore: boolean
-}
-
-export default function Dashboard() {
-  const [posts, setPosts] = useState<Post[]>([])
-  const [pagination, setPagination] = useState<PaginationInfo | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const userId = 'd7b500dd-0089-4fa7-83e7-2c91539950a2'
-
-  const fetchPosts = async (page: number, append: boolean = false) => {
-    try {
-      if (append) {
-        setLoadingMore(true)
-      } else {
-        setLoading(true)
-      }
-
-      setError(null)
-
-      const response = await fetch(`/api/posts/list?user_id=${userId}&page=${page}&limit=20`)
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-
-      // Check if data has the expected structure
-      if (!data || !data.posts || !Array.isArray(data.posts)) {
-        console.error('Invalid API response:', data)
-        throw new Error('Invalid response format from API')
-      }
-
-      if (append) {
-        setPosts(prev => [...prev, ...data.posts])
-      } else {
-        setPosts(data.posts)
-      }
-
-      if (data.pagination) {
-        setPagination(data.pagination)
-      }
-    } catch (error) {
-      console.error('Failed to fetch posts:', error)
-      setError(error instanceof Error ? error.message : 'Failed to load posts')
-    } finally {
-      setLoading(false)
-      setLoadingMore(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchPosts(1)
-  }, [])
-
-  const loadMore = () => {
-    if (pagination?.hasMore && !loadingMore) {
-      const nextPage = pagination.page + 1
-      fetchPosts(nextPage, true)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">🍵 Steep</h1>
-              <a href="/" className="text-sm text-gray-600 hover:text-gray-900">
-                Home
-              </a>
-            </div>
-          </div>
-        </header>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center text-gray-500">Loading your library...</div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">🍵 Steep</h1>
-              <a href="/" className="text-sm text-gray-600 hover:text-gray-900">
-                Home
-              </a>
-            </div>
-          </div>
-        </header>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">
-              Error loading posts
-            </h2>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <button
-              onClick={() => fetchPosts(1)}
-              className="bg-gray-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!posts || posts.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">🍵 Steep</h1>
-              <a href="/" className="text-sm text-gray-600 hover:text-gray-900">
-                Home
-              </a>
-            </div>
-          </div>
-        </header>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Your library is empty
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Start saving posts by forwarding them to your Steep email
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+export default function DashboardV2() {
+  const [activeTab, setActiveTab] = useState<Tab>('library')
+  const userId = 'd7b500dd-0089-4fa7-83e7-2c91539950a2' // Replace with actual user ID
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">🍵 Steep</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Your Library · {pagination?.total || 0} saved posts
-              </p>
+              <h1 className="text-3xl font-bold text-gray-900">🍵 Steep</h1>
+              <p className="text-gray-600 mt-1">Your LinkedIn Knowledge Base</p>
             </div>
-            <a href="/" className="text-sm text-gray-600 hover:text-gray-900">
+            <a 
+              href="/"
+              className="text-gray-600 hover:text-gray-900 font-medium"
+            >
               Home
             </a>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-
-        {pagination?.hasMore && (
-          <div className="mt-8 text-center">
+      {/* Tabs Navigation */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <nav className="flex space-x-8">
             <button
-              onClick={loadMore}
-              disabled={loadingMore}
-              className="bg-gray-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              onClick={() => setActiveTab('library')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'library'
+                  ? 'border-gray-900 text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
             >
-              {loadingMore ? 'Loading...' : 'Load More'}
+              📚 Library
             </button>
-            <p className="text-sm text-gray-500 mt-2">
-              Showing {posts.length} of {pagination.total} posts
-            </p>
-          </div>
-        )}
+            <button
+              onClick={() => setActiveTab('digests')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'digests'
+                  ? 'border-gray-900 text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              📧 Digests
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'settings'
+                  ? 'border-gray-900 text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              ⚙️ Settings
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {activeTab === 'library' && <LibraryTab userId={userId} />}
+        {activeTab === 'digests' && <DigestsTab userId={userId} />}
+        {activeTab === 'settings' && <SettingsTab userId={userId} />}
       </main>
     </div>
   )

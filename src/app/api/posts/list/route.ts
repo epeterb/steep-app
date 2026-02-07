@@ -12,6 +12,11 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('user_id')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
+    
+    // Filter parameters
+    const search = searchParams.get('search')
+    const dateFilter = searchParams.get('date_filter')
+    const authorFilter = searchParams.get('author')
 
     if (!userId) {
       return NextResponse.json(
@@ -20,46 +25,67 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Calculate offset
-    const offset = (page - 1) * limit
-
-    // Get total count
-    const { count, error: countError } = await supabase
+    // Build query
+    let query = supabase
       .from('saved_posts')
-      .select('*', { count: 'exact', head: true })
+      .select('*', { count: 'exact' })
       .eq('user_id', userId)
 
-    if (countError) {
-      console.error('Error counting posts:', countError)
-      return NextResponse.json(
-        { error: 'Failed to count posts' },
-        { status: 500 }
-      )
+    // Apply search filter (searches content and author name)
+    if (search) {
+      query = query.or(`content.ilike.%${search}%,author_name.ilike.%${search}%`)
     }
 
-    const total = count || 0
+    // Apply author filter
+    if (authorFilter) {
+      query = query.ilike('author_name', `%${authorFilter}%`)
+    }
 
-    // Get posts for current page
-    const { data: posts, error: postsError } = await supabase
-      .from('saved_posts')
-      .select('*')
-      .eq('user_id', userId)
+    // Apply date filter
+    if (dateFilter && dateFilter !== 'all') {
+      const now = new Date()
+      let dateFrom: Date | null = null
+
+      switch (dateFilter) {
+        case 'today':
+          dateFrom = new Date(now.setHours(0, 0, 0, 0))
+          break
+        case 'week':
+          dateFrom = new Date(now.setDate(now.getDate() - 7))
+          break
+        case 'month':
+          dateFrom = new Date(now.setMonth(now.getMonth() - 1))
+          break
+        case 'year':
+          dateFrom = new Date(now.setFullYear(now.getFullYear() - 1))
+          break
+      }
+
+      if (dateFrom) {
+        query = query.gte('captured_at', dateFrom.toISOString())
+      }
+    }
+
+    // Apply pagination
+    const offset = (page - 1) * limit
+    query = query
       .order('captured_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    if (postsError) {
-      console.error('Error fetching posts:', postsError)
+    const { data: posts, error, count } = await query
+
+    if (error) {
+      console.error('Error fetching posts:', error)
       return NextResponse.json(
         { error: 'Failed to fetch posts' },
         { status: 500 }
       )
     }
 
-    // Calculate pagination info
+    const total = count || 0
     const totalPages = Math.ceil(total / limit)
     const hasMore = page < totalPages
 
-    // ALWAYS return posts array (even if empty)
     return NextResponse.json({
       posts: posts || [],
       pagination: {
@@ -70,10 +96,11 @@ export async function GET(request: NextRequest) {
         hasMore
       }
     })
+
   } catch (error) {
-    console.error('API error:', error)
+    console.error('Posts list error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Server error' },
       { status: 500 }
     )
   }
