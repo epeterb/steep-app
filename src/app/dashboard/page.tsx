@@ -37,7 +37,7 @@ export default function DashboardPage() {
         setLoading(true)
       }
       
-      const response = await fetch(`/api/posts/list?user_id=${userId}&page=${nano src/app/dashboard/page.tsx}&limit=20`)
+      const response = await fetch(`/api/posts/list?user_id=${userId}&page=${page}&limit=20`)
       const data = await response.json()
       
       if (append) {
