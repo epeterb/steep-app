@@ -27,7 +27,7 @@ export default function Dashboard() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const userId = 'd7b500dd-0089-4fa7-83e7-2c91539950a2'
+  const userId = 'aa22c17f-cfca-495c-b20b-3f30088fb2ff'
 
   const fetchPosts = async (page: number, append: boolean = false) => {
     try {
@@ -75,12 +75,12 @@ export default function Dashboard() {
     fetchPosts(1)
   }, [])
 
-const loadMore = () => {
-  if (pagination?.hasMore && !loadingMore) {
-    const nextPage = pagination.page + 1  // ✅ Uses current page from API
-    fetchPosts(nextPage, true)
+  const loadMore = () => {
+    if (pagination?.hasMore && !loadingMore) {
+      const nextPage = pagination.page + 1
+      fetchPosts(nextPage, true)
+    }
   }
-}
 
   if (loading) {
     return (
@@ -154,11 +154,6 @@ const loadMore = () => {
             <p className="text-gray-600 mb-6">
               Start saving posts by forwarding them to your Steep email
             </p>
-            <div className="bg-gray-100 rounded-lg p-4 inline-block">
-              <p className="text-sm text-gray-700">
-                Forward LinkedIn posts to: <strong>{userId}@save.steep.news</strong>
-              </p>
-            </div>
           </div>
         </div>
       </div>
