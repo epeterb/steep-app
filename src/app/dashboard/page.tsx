@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [error, setError] = useState<string | null>(null)
 
   const userId = 'd7b500dd-0089-4fa7-83e7-2c91539950a2'
 
@@ -37,8 +38,21 @@ export default function Dashboard() {
         setLoading(true)
       }
 
+      setError(null)
+
       const response = await fetch(`/api/posts/list?user_id=${userId}&page=${page}&limit=20`)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
+
+      // Check if data has the expected structure
+      if (!data || !data.posts || !Array.isArray(data.posts)) {
+        console.error('Invalid API response:', data)
+        throw new Error('Invalid response format from API')
+      }
 
       if (append) {
         setPosts(prev => [...prev, ...data.posts])
@@ -46,10 +60,13 @@ export default function Dashboard() {
         setPosts(data.posts)
       }
 
-      setPagination(data.pagination)
-      setCurrentPage(page)
+      if (data.pagination) {
+        setPagination(data.pagination)
+        setCurrentPage(page)
+      }
     } catch (error) {
       console.error('Failed to fetch posts:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load posts')
     } finally {
       setLoading(false)
       setLoadingMore(false)
@@ -61,7 +78,7 @@ export default function Dashboard() {
   }, [])
 
   const loadMore = () => {
-    if (pagination?.hasMore) {
+    if (pagination?.hasMore && !loadingMore) {
       fetchPosts(currentPage + 1, true)
     }
   }
@@ -81,6 +98,37 @@ export default function Dashboard() {
         </header>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center text-gray-500">Loading your library...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">🍵 Steep</h1>
+              <a href="/" className="text-sm text-gray-600 hover:text-gray-900">
+                Home
+              </a>
+            </div>
+          </div>
+        </header>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-2">
+              Error loading posts
+            </h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={() => fetchPosts(1)}
+              className="bg-gray-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     )
