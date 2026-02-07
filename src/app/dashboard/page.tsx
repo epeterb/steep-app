@@ -25,10 +25,9 @@ export default function Dashboard() {
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
   const [error, setError] = useState<string | null>(null)
 
-  const userId = 'd7b500dd-0089-4fa7-83e7-2c91539950a2'
+  const userId = 'your-user-id-here'
 
   const fetchPosts = async (page: number, append: boolean = false) => {
     try {
@@ -62,7 +61,6 @@ export default function Dashboard() {
 
       if (data.pagination) {
         setPagination(data.pagination)
-        setCurrentPage(page)
       }
     } catch (error) {
       console.error('Failed to fetch posts:', error)
@@ -79,7 +77,9 @@ export default function Dashboard() {
 
   const loadMore = () => {
     if (pagination?.hasMore && !loadingMore) {
-      fetchPosts(currentPage + 1, true)
+      // Use pagination.page from the API response, not local state
+      const nextPage = pagination.page + 1
+      fetchPosts(nextPage, true)
     }
   }
 
