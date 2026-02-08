@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import AskLibraryChat from './AskLibraryChat'
 import CreateCollectionModal from './CreateCollectionModal'
 import AddToCollection from './AddToCollection'
 
@@ -107,8 +106,6 @@ export default function LibraryTab({ userId }: { userId: string }) {
           </div>
         </div>
       )}
-
-      <AskLibraryChat userId={userId} collectionId={selectedCollection || undefined} />
 
       {loading ? (
         <div className="text-center py-12">Loading...</div>
