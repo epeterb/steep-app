@@ -8,23 +8,16 @@ const supabase = createClient(
 )
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+  apiKey: process.env.ANTHROPIC_API_KEY!
 })
 
 export async function POST(request: NextRequest) {
   try {
     const { question, user_id, collection_id } = await request.json()
 
-    if (!question || !user_id) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
-
     let query = supabase
       .from('saved_posts')
-      .select('*')
+      .select('id, author_name, author_headline, content, original_url, captured_at')
       .eq('user_id', user_id)
       .order('captured_at', { ascending: false })
       .limit(100)
@@ -34,31 +27,22 @@ export async function POST(request: NextRequest) {
         .from('collection_posts')
         .select('post_id')
         .eq('collection_id', collection_id)
-
+      
       const postIds = collectionPosts?.map(cp => cp.post_id) || []
       query = query.in('id', postIds)
     }
 
-    const { data: posts, error: postsError } = await query
+    const { data: posts, error } = await query
 
-    if (postsError) {
-      console.error('Error fetching posts:', postsError)
-      return NextResponse.json(
-        { error: 'Failed to fetch posts' },
-        { status: 500 }
-      )
-    }
-
-    if (!posts || posts.length === 0) {
-      return NextResponse.json({
-        answer: "You haven't saved any posts yet. Forward some LinkedIn posts to start building your library!",
+    if (error || !posts || posts.length === 0) {
+      return NextResponse.json({ 
+        answer: 'No posts found in your library.',
         citations: []
       })
     }
 
     const postsContext = posts.map((p, idx) => ({
       id: idx + 1,
-      post_id: p.id,
       author: p.author_name,
       headline: p.author_headline,
       content: p.content?.substring(0, 1000),
@@ -69,70 +53,49 @@ export async function POST(request: NextRequest) {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: `You are a personal research assistant helping someone understand their saved LinkedIn posts.
+      messages: [{
+        role: 'user',
+        content: `You are analyzing a user's saved LinkedIn posts. Answer their question accurately and cite your sources.
 
-USER'S SAVED POSTS:
+POSTS LIBRARY:
 ${JSON.stringify(postsContext, null, 2)}
 
-USER'S QUESTION:
-${question}
+USER QUESTION: ${question}
 
 INSTRUCTIONS:
-1. Answer the question based ONLY on the saved posts provided above
-2. Cite specific posts by their ID number (e.g., "According to post #3...")
-3. If the posts don't contain relevant information, say so honestly
-4. Keep your answer concise and actionable
-5. At the end, list the post IDs you referenced
-
-FORMAT YOUR RESPONSE LIKE THIS:
-[Your answer here, citing posts like "Post #1 discusses..." or "According to #3..."]
-
-CITED POSTS: [1, 3, 7]`
-        }
-      ]
+- Answer the question accurately using the posts provided
+- For counting questions, be systematic and accurate - count carefully before responding
+- Cite specific post numbers in your answer
+- End your response with "CITED POSTS: [list of post IDs]" on a new line
+- Be concise but thorough
+- If counting authors, create a frequency table first, then report results`
+      }]
     })
 
-    const answerText = response.content[0].type === 'text' ? response.content[0].text : ''
-
-    const citedIds = extractCitedPostIds(answerText, postsContext.length)
+    const fullResponse = response.content[0].type === 'text' ? response.content[0].text : ''
     
+    const citedIds = extractCitedPostIds(fullResponse)
     const citations = citedIds.map(id => {
-      const post = postsContext[id - 1]
+      const post = posts[id - 1]
       return {
-        post_id: post.post_id,
-        author: post.author,
-        url: post.url
+        post_id: post?.id,
+        author: post?.author_name,
+        url: post?.original_url
       }
-    })
+    }).filter(c => c.post_id)
 
-    const cleanAnswer = answerText.split('CITED POSTS:')[0].trim()
+    const answer = fullResponse.replace(/CITED POSTS:.*$/s, '').trim()
 
-    return NextResponse.json({
-      answer: cleanAnswer,
-      citations: citations,
-      post_count: posts.length
-    })
+    return NextResponse.json({ answer, citations })
 
   } catch (error) {
-    console.error('Library ask error:', error)
-    return NextResponse.json(
-      { error: 'Server error' },
-      { status: 500 }
-    )
+    console.error('Error:', error)
+    return NextResponse.json({ error: 'Failed to process question' }, { status: 500 })
   }
 }
 
-function extractCitedPostIds(text: string, maxId: number): number[] {
-  const citedLine = text.split('CITED POSTS:')[1]
-  if (!citedLine) return []
-
-  const matches = citedLine.match(/\d+/g)
-  if (!matches) return []
-
-  return matches
-    .map(n => parseInt(n))
-    .filter(n => n >= 1 && n <= maxId)
+function extractCitedPostIds(text: string): number[] {
+  const match = text.match(/CITED POSTS:\s*\[([\d,\s]+)\]/)
+  if (!match) return []
+  return match[1].split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
 }
