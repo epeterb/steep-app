@@ -75,7 +75,7 @@ export default function AskLibraryChat({
         {messages.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             <p className="mb-2">Ask questions about your saved posts</p>
-            <p className="text-sm">Try: "What are the main themes?" or "Summarize AI trends"</p>
+            <p className="text-sm">Try: &quot;What are the main themes?&quot; or &quot;Summarize AI trends&quot;</p>
           </div>
         )}
 
