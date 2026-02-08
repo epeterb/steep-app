@@ -2,12 +2,32 @@
 
 import { useState } from 'react'
 
-export default function AskLibraryChat({ userId, collectionId }: { userId: string, collectionId?: string }) {
+type Message = {
+  role: 'user' | 'ai'
+  text: string
+  sources?: Array<{ post_id: string; author: string; url: string }>
+}
+
+type Props = {
+  userId: string
+  collectionId?: string
+}
+
+function formatText(text: string): string {
+  let formatted = text
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+  formatted = formatted.replace(/^- (.*$)/gim, '<li class="ml-4">$1</li>')
+  formatted = formatted.replace(/(<li.*<\/li>\n?)+/gim, '<ul class="list-disc space-y-1 my-2">$&</ul>')
+  formatted = formatted.replace(/\n\n/g, '</p><p class="mt-3">')
+  return formatted
+}
+
+export default function AskLibraryChat({ userId, collectionId }: Props) {
   const [input, setInput] = useState('')
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
 
-  const handleAsk = async () => {
+  async function handleAsk() {
     if (!input.trim()) return
     
     const question = input
@@ -35,20 +55,6 @@ export default function AskLibraryChat({ userId, collectionId }: { userId: strin
     setLoading(false)
   }
 
-  const formatText = (text: string) => {
-    // Bold text
-    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-    
-    // Bullet points
-    formatted = formatted.replace(/^- (.*$)/gim, '<li class="ml-4">$1</li>')
-    formatted = formatted.replace(/(<li.*<\/li>\n?)+/gim, '<ul class="list-disc space-y-1 my-2">$&</ul>')
-    
-    // Line breaks
-    formatted = formatted.replace(/\n\n/g, '</p><p class="mt-3">')
-    
-    return formatted
-  }
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
       <div className="flex items-center gap-2 mb-4">
@@ -60,7 +66,7 @@ export default function AskLibraryChat({ userId, collectionId }: { userId: strin
         {messages.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             <p className="mb-2">Ask questions about your saved posts</p>
-            <p className="text-sm text-gray-400">Try: "What are the main themes?" or "Who talks about AI?"</p>
+            <p className="text-sm text-gray-400">Try: What are the main themes?</p>
           </div>
         )}
 
@@ -76,7 +82,7 @@ export default function AskLibraryChat({ userId, collectionId }: { userId: strin
                 <div className="font-medium text-xs text-gray-500 mb-2">AI Answer</div>
                 <div 
                   className="text-gray-800 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: `<p>${formatText(m.text)}</p>` }}
+                  dangerouslySetInnerHTML={{ __html: '<p>' + formatText(m.text) + '</p>' }}
                 />
                 
                 {m.sources && m.sources.length > 0 && (
@@ -85,7 +91,7 @@ export default function AskLibraryChat({ userId, collectionId }: { userId: strin
                       Sources ({m.sources.length})
                     </div>
                     <div className="space-y-2">
-                      {m.sources.map((s: any, j: number) => (
+                      {m.sources.map((s, j) => (
                         
                           key={j}
                           href={s.url}
