@@ -64,11 +64,9 @@ USER QUESTION: ${question}
 
 INSTRUCTIONS:
 - Answer the question accurately using the posts provided
-- For counting questions, be systematic and accurate - count carefully before responding
 - Cite specific post numbers in your answer
 - End your response with "CITED POSTS: [list of post IDs]" on a new line
-- Be concise but thorough
-- If counting authors, create a frequency table first, then report results`
+- Be concise but thorough`
       }]
     })
 
@@ -84,7 +82,7 @@ INSTRUCTIONS:
       }
     }).filter(c => c.post_id)
 
-    const answer = fullResponse.replace(/CITED POSTS:.*$/s, '').trim()
+    const answer = fullResponse.split('CITED POSTS:')[0].trim()
 
     return NextResponse.json({ answer, citations })
 
