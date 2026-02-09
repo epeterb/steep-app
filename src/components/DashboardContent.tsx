@@ -27,7 +27,7 @@ export default function DashboardContent() {
       if (storedEmail) {
         fetchUserId(storedEmail)
       } else {
-        router.push('/')
+        router.push('/login')
       }
     }
   }, [searchParams, router])
@@ -41,10 +41,10 @@ export default function DashboardContent() {
         setUserId(data.user.id)
         setUserEmail(data.user.email)
       } else {
-        router.push('/')
+        router.push('/login')
       }
     } catch (err) {
-      router.push('/')
+      router.push('/login')
     } finally {
       setLoading(false)
     }
