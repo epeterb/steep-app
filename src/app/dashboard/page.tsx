@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import LibraryTab from '@/components/LibraryTab'
 import DigestsTab from '@/components/DigestsTab'
 import SettingsTab from '@/components/SettingsTab'
@@ -9,7 +10,16 @@ type Tab = 'library' | 'digests' | 'settings'
 
 export default function DashboardV2() {
   const [activeTab, setActiveTab] = useState<Tab>('library')
-  const userId = 'd7b500dd-0089-4fa7-83e7-2c91539950a2' // Replace with actual user ID
+  const userId = 'd7b500dd-0089-4fa7-83e7-2c91539950a2'
+  const router = useRouter()
+
+  const handleLogout = () => {
+    // Clear any session data
+    localStorage.clear()
+    sessionStorage.clear()
+    // Redirect to home
+    router.push('/')
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -21,12 +31,20 @@ export default function DashboardV2() {
               <h1 className="text-3xl font-bold text-gray-900">🍵 Steep</h1>
               <p className="text-gray-600 mt-1">Your LinkedIn Knowledge Base</p>
             </div>
-            <a 
-              href="/"
-              className="text-gray-600 hover:text-gray-900 font-medium"
-            >
-              Home
-            </a>
+            <div className="flex items-center gap-4">
+              <a 
+                href="/"
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Home
+              </a>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </header>
