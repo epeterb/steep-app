@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import LibraryTab from '@/components/LibraryTab'
 import DigestsTab from '@/components/DigestsTab'
 import SettingsTab from '@/components/SettingsTab'
@@ -10,15 +10,66 @@ type Tab = 'library' | 'digests' | 'settings'
 
 export default function DashboardV2() {
   const [activeTab, setActiveTab] = useState<Tab>('library')
-  const userId = 'd7b500dd-0089-4fa7-83e7-2c91539950a2'
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    // Check for auth parameter from magic link
+    const authEmail = searchParams.get('auth')
+    
+    if (authEmail) {
+      // Store in localStorage
+      localStorage.setItem('userEmail', authEmail)
+      // Fetch user ID from email
+      fetchUserId(authEmail)
+    } else {
+      // Check localStorage
+      const storedEmail = localStorage.getItem('userEmail')
+      if (storedEmail) {
+        fetchUserId(storedEmail)
+      } else {
+        // No auth, redirect to home
+        router.push('/')
+      }
+    }
+  }, [searchParams, router])
+
+  async function fetchUserId(email: string) {
+    try {
+      const res = await fetch(`/api/user/by-email?email=${encodeURIComponent(email)}`)
+      const data = await res.json()
+      
+      if (data.user) {
+        setUserId(data.user.id)
+        setUserEmail(data.user.email)
+      } else {
+        router.push('/')
+      }
+    } catch (err) {
+      router.push('/')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogout = () => {
-    // Clear any session data
-    localStorage.clear()
-    sessionStorage.clear()
-    // Redirect to home
+    localStorage.removeItem('userEmail')
     router.push('/')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!userId) {
+    return null
   }
 
   return (
@@ -32,12 +83,9 @@ export default function DashboardV2() {
               <p className="text-gray-600 mt-1">Your LinkedIn Knowledge Base</p>
             </div>
             <div className="flex items-center gap-4">
-              <a 
-                href="/"
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Home
-              </a>
+              {userEmail && (
+                <span className="text-sm text-gray-600">{userEmail}</span>
+              )}
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
