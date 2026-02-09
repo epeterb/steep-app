@@ -13,6 +13,7 @@ export default function DashboardContent() {
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -36,15 +37,17 @@ export default function DashboardContent() {
     try {
       const res = await fetch(`/api/user/by-email?email=${encodeURIComponent(email)}`)
       const data = await res.json()
-      
+
       if (data.user) {
         setUserId(data.user.id)
         setUserEmail(data.user.email)
       } else {
-        router.push('/login')
+        setError('User not found')
+        setTimeout(() => router.push('/login'), 2000)
       }
     } catch (err) {
-      router.push('/login')
+      setError('Failed to load user data')
+      setTimeout(() => router.push('/login'), 2000)
     } finally {
       setLoading(false)
     }
@@ -59,6 +62,17 @@ export default function DashboardContent() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-2">Error: {error}</div>
+          <div className="text-sm text-gray-500">Redirecting to login...</div>
+        </div>
       </div>
     )
   }
