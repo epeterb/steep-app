@@ -84,6 +84,7 @@ export default function LibraryTab({ userId }: { userId: string }) {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1 px-4 py-2 border rounded-lg"
         />
+        <button onClick={async () => { const r = await fetch("/api/digest/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId }) }); const d = await r.json(); alert(d.post_count === 0 ? "No posts this week" : "Digest generated! Check your Digests tab.") }} className="px-4 py-2 bg-green-600 text-white rounded-lg whitespace-nowrap">Generate Digest</button>
         <button onClick={() => setShowCreateModal(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg">
           + New Collection
         </button>
@@ -125,6 +126,7 @@ export default function LibraryTab({ userId }: { userId: string }) {
                 <div>
                   <div className="font-semibold">{post.author_name}</div>
                   <div className="text-sm text-gray-600">{post.author_headline}</div>
+                  <div className="text-xs text-gray-400 mt-1">{new Date(post.captured_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                 </div>
                 <AddToCollection userId={userId} postId={post.id} onCollectionsUpdate={fetchCollections} />
               </div>
