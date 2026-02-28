@@ -5,7 +5,7 @@ export default function Home() {
       <div className="max-w-4xl mx-auto px-6 py-20">
         <div className="text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            ☕ Steep
+            🫖 Steep
           </h1>
           <p className="text-xl text-gray-600 mb-2">
             Let your ideas brew
@@ -33,7 +33,7 @@ export default function Home() {
             </p>
           </div>
           <div className="text-center p-6">
-            <div className="text-4xl mb-4">☕</div>
+            <div className="text-4xl mb-4">🫖</div>
             <h3 className="font-semibold text-lg mb-2">Digest</h3>
             <p className="text-gray-600">
               Every weekend, get a curated digest of what you captured.
