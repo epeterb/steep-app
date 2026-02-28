@@ -141,23 +141,23 @@ ${JSON.stringify(postsForPrompt, null, 2)}
 
 CREATE A WEEKLY DIGEST WITH THESE SECTIONS:
 
-## ☕ THE THROUGHLINE
+## THE THROUGHLINE
 What's the connective tissue across everything saved this week? (2-3 sentences)
 
-## 📚 THIS WEEK'S THEMES
+## THIS WEEK'S THEMES
 Group posts into 2-4 themes. For each:
 - **Theme Name**: Punchy title
 - **The Pattern**: What people are saying (2-3 sentences)
 - **The Posts**: Brief summary of each relevant post with [→ Original](url) link
 - **Your Takeaway**: One actionable insight
 
-## 👀 PEOPLE WORTH FOLLOWING
-Authors who appeared multiple times or posted great content. Include why they're worth following.
+## VOICES WORTH NOTING
+Authors who appeared multiple times or posted standout content this week. These are voices worth continuing to follow. Include a brief note on why their perspective matters.
 
-## 💎 THE SLEEPER
+## THE SLEEPER
 One post that seems minor but contains a hidden gem worth revisiting.
 
-## 🤔 REFLECTION PROMPT
+## REFLECTION PROMPT
 One thought-provoking question based on what they saved.
 
 STYLE GUIDELINES:
