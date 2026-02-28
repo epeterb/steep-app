@@ -5,7 +5,7 @@ export default function Home() {
       <div className="max-w-4xl mx-auto px-6 py-20">
         <div className="text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Steep
+            ☕ Steep
           </h1>
           <p className="text-xl text-gray-600 mb-2">
             Let your ideas brew
@@ -19,21 +19,21 @@ export default function Home() {
         {/* How it Works */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           <div className="text-center p-6">
-            <div className="text-4xl mb-4 font-bold text-gray-900">1</div>
+            <div className="text-4xl mb-4">📧</div>
             <h3 className="font-semibold text-lg mb-2">Forward</h3>
             <p className="text-gray-600">
               See an interesting post? Forward it to your Steep email. That's it.
             </p>
           </div>
           <div className="text-center p-6">
-            <div className="text-4xl mb-4 font-bold text-gray-900">2</div>
+            <div className="text-4xl mb-4">🧠</div>
             <h3 className="font-semibold text-lg mb-2">Brew</h3>
             <p className="text-gray-600">
               AI processes your saves, finds patterns, and surfaces insights.
             </p>
           </div>
           <div className="text-center p-6">
-            <div className="text-4xl mb-4 font-bold text-gray-900">3</div>
+            <div className="text-4xl mb-4">☕</div>
             <h3 className="font-semibold text-lg mb-2">Digest</h3>
             <p className="text-gray-600">
               Every weekend, get a curated digest of what you captured.
