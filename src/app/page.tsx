@@ -49,7 +49,7 @@ export default function Home() {
             <p className="text-gray-500 mb-6">/year</p>
             <p className="text-gray-600 mb-6">Includes a 14-day free trial</p>
             <a
-              href="/dashboard"
+              href="/login"
               className="inline-block bg-gray-900 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition w-full"
             >
               Start Free Trial
