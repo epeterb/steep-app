@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         .insert({
           email: normalizedEmail,
           name: username,
-          inbound_email: inboundEmail,
+          steep_email: inboundEmail,
           plan: 'trial',
           digest_day: 'saturday',
         })
