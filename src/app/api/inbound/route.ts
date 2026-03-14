@@ -21,7 +21,18 @@ export async function POST(request: NextRequest) {
     console.log('From:', From)
     console.log('Subject:', Subject)
     
-    const steepEmail = To.toLowerCase().trim()
+    // Postmark sends To as "Display Name <email@domain>" or just "email@domain"
+    // Extract just the email address from angle brackets if present
+    const extractEmail = (raw: string): string => {
+      const match = raw.match(/<([^>]+)>/)
+      return match ? match[1].toLowerCase().trim() : raw.toLowerCase().trim()
+    }
+    
+    // ToFull is Postmark's structured recipient array - more reliable than raw To string
+    const toField = Array.isArray(payload.ToFull) && payload.ToFull.length > 0
+      ? payload.ToFull[0].Email
+      : To
+    const steepEmail = extractEmail(toField)
     
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -30,11 +41,13 @@ export async function POST(request: NextRequest) {
       .single()
     
     if (userError || !user) {
-      console.error('User not found for:', steepEmail)
+      console.error('User not found for steep_email:', steepEmail, '| Raw To:', To, '| ToFull:', JSON.stringify(payload.ToFull))
+      // Return 200 so Postmark doesn't retry, but log enough to diagnose
       return NextResponse.json({ 
         success: false, 
         error: 'User not found',
-        steep_email: steepEmail 
+        steep_email_searched: steepEmail,
+        raw_to: To
       })
     }
     
@@ -79,10 +92,11 @@ export async function POST(request: NextRequest) {
       .single()
     
     if (postError) {
-      console.error('Error saving post:', postError)
+      console.error('Error saving post:', JSON.stringify(postError))
       return NextResponse.json({ 
         success: false, 
-        error: 'Failed to save post' 
+        error: 'Failed to save post',
+        details: postError.message
       })
     }
     
