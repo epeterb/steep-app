@@ -36,7 +36,7 @@ export default function BrewingPreview({ userId, digestDay }: Props) {
 
     if (data) {
       setCount(data.length)
-      const unique = [...new Set(data.map(p => p.author_name).filter(Boolean))]
+      const unique = Array.from(new Set(data.map((p: any) => p.author_name).filter(Boolean)))
       setAuthors(unique.slice(0, 3))
     }
 
