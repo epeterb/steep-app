@@ -52,7 +52,7 @@ export default function ReferralPrompt({ digestCount, userEmail }: Props) {
             >
               {copied ? '✓ Copied!' : 'Copy referral link'}
             </button>
-            
+            <a
               href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -60,7 +60,7 @@ export default function ReferralPrompt({ digestCount, userEmail }: Props) {
             >
               Share on LinkedIn
             </a>
-            
+            <a
               href={`mailto:?subject=You should try Steep&body=${encodeURIComponent(shareText)}`}
               className="text-sm font-medium text-gray-300 hover:text-white underline underline-offset-2 transition-colors"
             >

@@ -186,7 +186,7 @@ export default function LibraryTab({ userId }: { userId: string }) {
                 <AddToCollection userId={userId} postId={post.id} onCollectionsUpdate={fetchCollections} />
               </div>
               <p className="text-sm text-gray-700 leading-relaxed mb-3 line-clamp-4">{post.content}</p>
-              
+              <a
                 href={post.original_url}
                 target="_blank"
                 rel="noopener noreferrer"

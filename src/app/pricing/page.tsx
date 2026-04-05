@@ -72,7 +72,7 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            
+            <a
               href="/login"
               className="block text-center bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition"
             >
