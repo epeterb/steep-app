@@ -8,6 +8,7 @@ import DigestsTab from '@/components/DigestsTab'
 import SettingsTab from '@/components/SettingsTab'
 import OnboardingBanner from '@/components/OnboardingBanner'
 import DashboardSummary from '@/components/DashboardSummary'
+import ReferralPrompt from '@/components/ReferralPrompt'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,6 +30,7 @@ export default function DashboardContent() {
   const [activeTab, setActiveTab] = useState<Tab>('library')
   const [user, setUser] = useState<UserProfile | null>(null)
   const [postCount, setPostCount] = useState<number>(0)
+  const [digestCount, setDigestCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -56,11 +58,12 @@ export default function DashboardContent() {
 
       if (data.user) {
         setUser(data.user)
-        const { count } = await supabase
-          .from('saved_posts')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', data.user.id)
-        setPostCount(count || 0)
+        const [{ count: posts }, { count: digests }] = await Promise.all([
+          supabase.from('saved_posts').select('*', { count: 'exact', head: true }).eq('user_id', data.user.id),
+          supabase.from('weekly_digests').select('*', { count: 'exact', head: true }).eq('user_id', data.user.id)
+        ])
+        setPostCount(posts || 0)
+        setDigestCount(digests || 0)
       } else {
         setError('User not found')
         setTimeout(() => router.push('/login'), 2000)
@@ -109,6 +112,12 @@ export default function DashboardContent() {
               </p>
             </div>
             <div className="flex items-center gap-4">
+              
+                href="/pricing"
+                className="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors hidden md:block"
+              >
+                Pricing
+              </a>
               <span className="text-xs text-gray-400 hidden md:block">{user.email}</span>
               <button
                 onClick={handleLogout}
@@ -152,6 +161,7 @@ export default function DashboardContent() {
         {activeTab === 'library' && (
           <>
             <OnboardingBanner steepEmail={user.steep_email} postCount={postCount} />
+            <ReferralPrompt digestCount={digestCount} userEmail={user.email} />
             <DashboardSummary userId={user.id} digestDay={user.digest_day} />
             <LibraryTab userId={user.id} />
           </>
