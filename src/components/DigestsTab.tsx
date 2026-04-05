@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -54,6 +55,9 @@ export default function DigestsTab({ userId }: { userId: string }) {
                 {digest.post_count} posts · {digest.sent_at ? 'Sent' : 'Draft'}
               </p>
             </div>
+            <Link href={`/digest/${digest.id}`} className="text-sm text-blue-600 hover:text-blue-800">
+              View Full Digest →
+            </Link>
           </div>
           <div className="prose max-w-none text-gray-800 line-clamp-6">
             {digest.digest_content?.substring(0, 500)}...
