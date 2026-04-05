@@ -115,12 +115,32 @@ async function generateWeeklyDigest(
   weeksActive: number
 ): Promise<string> {
   
+  // Count author appearances
+  const authorCounts: Record<string, { count: number; headline: string; urls: string[] }> = {}
+  posts.forEach(p => {
+    if (!p.author_name) return
+    if (!authorCounts[p.author_name]) {
+      authorCounts[p.author_name] = { count: 0, headline: p.author_headline || '', urls: [] }
+    }
+    authorCounts[p.author_name].count++
+    if (p.original_url) authorCounts[p.author_name].urls.push(p.original_url)
+  })
+
+  const repeatAuthors = Object.entries(authorCounts)
+    .filter(([, v]) => v.count > 1)
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([name, v]) => {
+      // Extract LinkedIn handle from URL if possible
+      const urlSlug = v.urls[0]?.match(/linkedin\.com\/posts\/([^_]+)/)?.[1] || ''
+      const profileUrl = urlSlug ? `https://www.linkedin.com/in/${urlSlug}` : ''
+      return { name, count: v.count, headline: v.headline, profileUrl }
+    })
+
   const postsForPrompt = posts.map(p => ({
     author: p.author_name,
     headline: p.author_headline,
     content: p.content?.substring(0, 2000),
     url: p.original_url,
-    source: p.source,
     saved: p.captured_at
   }))
   
@@ -152,7 +172,14 @@ Group posts into 2-4 themes. For each:
 - **Your Takeaway**: One actionable insight
 
 ## VOICES WORTH NOTING
-Authors who appeared multiple times or posted standout content this week. These are voices worth continuing to follow. Include a brief note on why their perspective matters.
+${repeatAuthors.length > 0
+  ? `These authors appeared multiple times this week:\n${repeatAuthors.map(a =>
+      `- ${a.name} (${a.count} posts)${a.headline ? ` — ${a.headline}` : ''}${a.profileUrl ? ` — LinkedIn: ${a.profileUrl}` : ''}`
+    ).join('\n')}`
+  : 'No authors appeared more than once this week.'
+}
+
+For each repeat author, write 2-3 sentences on why their perspective is worth following. Include their LinkedIn profile link if available so readers can follow them directly.
 
 ## THE SLEEPER
 One post that seems minor but contains a hidden gem worth revisiting.

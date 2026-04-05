@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       max_tokens: 2000,
       messages: [{
         role: 'user',
-        content: `You are analyzing a user's saved LinkedIn posts. Answer their question accurately and cite your sources.
+        content: `You are analyzing a user's saved LinkedIn posts. Answer their question conversationally and helpfully.
 
 POSTS LIBRARY:
 ${JSON.stringify(postsContext, null, 2)}
@@ -63,10 +63,14 @@ ${JSON.stringify(postsContext, null, 2)}
 USER QUESTION: ${question}
 
 INSTRUCTIONS:
-- Answer the question accurately using the posts provided
-- Cite specific post numbers in your answer
+- Answer conversationally, like a knowledgeable assistant
+- Do NOT use markdown headers (##, ###)
+- You may use bold (**word**) sparingly for emphasis
+- Keep bullet points minimal — prefer prose
+- If listing posts by an author, just say "Andreas Horn saved 6 posts this week" naturally
+- Cite sources by saying things like "In post #3, Horn argues..."
 - End your response with "CITED POSTS: [list of post IDs]" on a new line
-- Be concise but thorough`
+- Be concise — 3-5 sentences for simple questions, a short paragraph for complex ones`
       }]
     })
 
